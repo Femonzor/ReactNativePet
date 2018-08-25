@@ -1,62 +1,52 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
-
 import * as React from 'react';
-import {Platform, StyleSheet, Text, View} from 'react-native';
-
-// const instructions = Platform.select({
-//   ios: 'Press Cmd+R to reload,\n' + 'Cmd+D or shake for dev menu',
-//   android:
-//     'Double tap R on your keyboard to reload,\n' +
-//     'Shake or press menu button for dev menu',
-// });
+import {StyleSheet, TabBarIOS, Text, View} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 interface Props {}
 interface State {
-  times: number;
+  selectedTab: string;
 }
 export default class App extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      times: 0,
+      selectedTab: 'list',
     };
   }
-  timesPlus = () => {
-    let times = this.state.times;
-    times += 1;
+  videoPress = () => {
     this.setState({
-      times,
+      selectedTab: 'list',
     });
   }
-  componentWillMount() {
-    console.log('componentWillMount');
+  recordPress = () => {
+    this.setState({
+      selectedTab: 'edit',
+    });
   }
-  componentDidMount() {
-    console.log('componentDidMount');
-  }
-  shouldComponentUpdate() {
-    console.log('shouldComponentUpdate');
-    return true;
-  }
-  componentWillUpdate() {
-    console.log('componentWillUpdate');
-  }
-  componentDidUpdate() {
-    console.log('componentDidUpdate');
+  morePress = () => {
+    this.setState({
+      selectedTab: 'account',
+    });
   }
   render() {
-    console.log('render');
     return (
-      <View style={styles.container}>
-        <Text style={styles.welcome} onPress={this.timesPlus}>click me</Text>
-        <Text style={styles.instructions}>click {this.state.times} times</Text>
-      </View>
+      <TabBarIOS tintColor='#ee735c'>
+        <Icon.TabBarItem iconName='ios-videocam' selectedIconName='ios-videocam' selected={this.state.selectedTab === 'list'} onPress={this.videoPress}>
+          <View style={styles.container}>
+            <Text>列表页面</Text>
+          </View>
+        </Icon.TabBarItem>
+        <Icon.TabBarItem iconName='ios-recording' selectedIconName='ios-recording' selected={this.state.selectedTab === 'edit'} onPress={this.recordPress}>
+          <View style={styles.container}>
+            <Text>制作页面</Text>
+          </View>
+        </Icon.TabBarItem>
+        <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this.morePress}>
+          <View style={styles.container}>
+            <Text>账户页面</Text>
+          </View>
+        </Icon.TabBarItem>
+      </TabBarIOS>
     );
   }
 }
