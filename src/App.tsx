@@ -1,6 +1,9 @@
 import * as React from 'react';
-import {StyleSheet, TabBarIOS, Text, View} from 'react-native';
+import {TabBarIOS} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Account from './components/Account';
+import VideoCreate from './components/VideoCreate';
+import VideoList from './components/VideoList';
 
 interface Props {}
 interface State {
@@ -32,40 +35,15 @@ export default class App extends React.Component<Props, State> {
     return (
       <TabBarIOS tintColor='#ee735c'>
         <Icon.TabBarItem iconName='ios-videocam' selectedIconName='ios-videocam' selected={this.state.selectedTab === 'list'} onPress={this.videoPress}>
-          <View style={styles.container}>
-            <Text>列表页面</Text>
-          </View>
+          <VideoList></VideoList>
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-recording' selectedIconName='ios-recording' selected={this.state.selectedTab === 'edit'} onPress={this.recordPress}>
-          <View style={styles.container}>
-            <Text>制作页面</Text>
-          </View>
+          <VideoCreate></VideoCreate>
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this.morePress}>
-          <View style={styles.container}>
-            <Text>账户页面</Text>
-          </View>
+          <Account></Account>
         </Icon.TabBarItem>
       </TabBarIOS>
     );
   }
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
