@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import config from '../common/config';
+import request from '../common/request';
 
 const width = Dimensions.get('window').width;
 
@@ -23,33 +25,29 @@ export default class VideoList extends React.Component<Props, State> {
       rowHasChanged: (r1, r2) => r1 !== r2,
     });
     this.state = {
-      videos: dataSource.cloneWithRows([
-        {
-          id: '330000198207315548',
-          thumb: 'https://dummyimage.com/1200x600/79f297',
-          video: 'http://qcloud.rrmj.tv/db5a8379a592f620853dd86690acdd99.mp4.f40.mp4?sign=1127de61b2a30205630cf23b4aa88303&t=5b82dcdf&r=8842901641661277975',
-          title: '识此江家状',
-        },
-        {
-          id: '360000200401141700',
-          thumb: 'https://dummyimage.com/1200x600/f2797e',
-          video: 'http://qcloud.rrmj.tv/db5a8379a592f620853dd86690acdd99.mp4.f40.mp4?sign=1127de61b2a30205630cf23b4aa88303&t=5b82dcdf&r=8842901641661277975',
-          title: '在战住火被',
-        },
-        {
-          id: '510000198901107697',
-          thumb: 'https://dummyimage.com/1280x720/79f2f0',
-          video: 'http://qcloud.rrmj.tv/db5a8379a592f620853dd86690acdd99.mp4.f40.mp4?sign=1127de61b2a30205630cf23b4aa88303&t=5b82dcdf&r=8842901641661277975',
-          title: '素力写红去',
-        },
-        {
-          id: '610000198202016167',
-          thumb: 'https://dummyimage.com/1200x600/d5f279',
-          video: 'http://qcloud.rrmj.tv/db5a8379a592f620853dd86690acdd99.mp4.f40.mp4?sign=1127de61b2a30205630cf23b4aa88303&t=5b82dcdf&r=8842901641661277975',
-          title: '色该元县部',
-        },
-      ]),
+      videos: dataSource.cloneWithRows([]),
     };
+  }
+  componentDidMount() {
+    this._fetchData();
+  }
+  _fetchData = () => {
+    request.get(`${config.api.base}${config.api.videos}`)
+      .then((data: any) => {
+        console.log(data);
+        if (data.code === 0) {
+          data.data.forEach((item: any) => {
+            item.thumb = item.thumb.replace('http://', 'https://');
+          });
+          console.log(data.data);
+          this.setState({
+            videos: this.state.videos.cloneWithRows(data.data),
+          });
+        }
+      })
+      .catch((error: Error) => {
+        console.log(error);
+      });
   }
   renderRow = (row: any) => {
     return (
@@ -79,7 +77,7 @@ export default class VideoList extends React.Component<Props, State> {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>列表页面</Text>
         </View>
-        <ListView dataSource={this.state.videos} renderRow={this.renderRow} automaticallyAdjustContentInsets={false}></ListView>
+        <ListView dataSource={this.state.videos} renderRow={this.renderRow} automaticallyAdjustContentInsets={false} enableEmptySections={true}></ListView>
       </View>
     );
   }
