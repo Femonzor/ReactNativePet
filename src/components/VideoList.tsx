@@ -1,8 +1,10 @@
 import * as React from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   ImageBackground,
   ListView,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableHighlight,
@@ -14,9 +16,17 @@ import request from '../common/request';
 
 const width = Dimensions.get('window').width;
 
+const cache = {
+  nextPage: 1,
+  items: [],
+  total: 0,
+};
+
 interface Props {}
 interface State {
   videos: any;
+  loading: boolean;
+  refreshing: boolean;
 }
 export default class VideoList extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -26,30 +36,90 @@ export default class VideoList extends React.Component<Props, State> {
     });
     this.state = {
       videos: dataSource.cloneWithRows([]),
+      loading: false,
+      refreshing: false,
     };
   }
   componentDidMount() {
-    this._fetchData();
+    this._fetchData(1);
   }
-  _fetchData = () => {
-    request.get(`${config.api.base}${config.api.videos}`)
-      .then((data: any) => {
-        console.log(data);
-        if (data.code === 0) {
-          data.data.forEach((item: any) => {
-            item.thumb = item.thumb.replace('http://', 'https://');
-          });
-          console.log(data.data);
-          this.setState({
-            videos: this.state.videos.cloneWithRows(data.data),
-          });
-        }
-      })
-      .catch((error: Error) => {
-        console.log(error);
+  _fetchData = (page: number) => {
+    if (page !== 0) {
+      this.setState({
+        loading: true,
       });
+    } else {
+      this.setState({
+        refreshing: true,
+      });
+    }
+    console.log(`page: ${page}`);
+    request.get(`${config.api.base}${config.api.videos}`, {
+      page,
+    }).then((data: any) => {
+      console.log(data);
+      if (data.code === 0) {
+        data.data.forEach((item: any) => {
+          item.thumb = item.thumb.replace('http://', 'https://');
+        });
+        let items;
+        if (page !== 0) {
+          items = cache.items.slice().concat(data.data);
+        } else {
+          cache.nextPage = 1;
+          items = data.data;
+        }
+        cache.nextPage += 1;
+        cache.items = items;
+        cache.total = data.total;
+        setTimeout(() => {
+          if (page !== 0) {
+            this.setState({
+              videos: this.state.videos.cloneWithRows(cache.items),
+              loading: false,
+            });
+          } else {
+            this.setState({
+              videos: this.state.videos.cloneWithRows(cache.items),
+              refreshing: false,
+            });
+          }
+        }, 2000);
+      }
+    })
+    .catch((error: Error) => {
+      if (page !== 0) {
+        this.setState({
+          loading: false,
+        });
+      } else {
+        this.setState({
+          refreshing: false,
+        });
+      }
+      console.warn(error);
+    });
   }
-  renderRow = (row: any) => {
+  _fetchMoreData = () => {
+    if (!this._hasMore() || this.state.loading) {
+      return;
+    }
+    const page = cache.nextPage;
+    this._fetchData(page);
+  }
+  _onRefresh = () => {
+    if (this.state.refreshing) {
+      return;
+    }
+    this.setState({
+      refreshing: true,
+    });
+    this._fetchData(0);
+  }
+  _hasMore = () => {
+    return cache.items.length !== cache.total;
+  }
+  _renderRow = (row: any) => {
     return (
       <TouchableHighlight>
         <View style={styles.item}>
@@ -71,13 +141,43 @@ export default class VideoList extends React.Component<Props, State> {
       </TouchableHighlight>
     );
   }
+  _renderFooter = () => {
+    if (!this._hasMore() && cache.total !== 0) {
+      return (
+        <View style={styles.loading}>
+          <Text style={styles.loadingText}>没有更多了</Text>
+        </View>
+      );
+    }
+    if (!this.state.loading) {
+      return <View style={styles.loading}></View>;
+    }
+    return <ActivityIndicator style={styles.loading}></ActivityIndicator>;
+  }
   render() {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>列表页面</Text>
         </View>
-        <ListView dataSource={this.state.videos} renderRow={this.renderRow} automaticallyAdjustContentInsets={false} enableEmptySections={true}></ListView>
+        <ListView
+          dataSource={this.state.videos}
+          renderRow={this._renderRow}
+          automaticallyAdjustContentInsets={false}
+          enableEmptySections={true}
+          onEndReached={this._fetchMoreData}
+          onEndReachedThreshold={20}
+          renderFooter={this._renderFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={this.state.refreshing}
+              tintColor='#f60'
+              title='拼命加载中...'
+              onRefresh={this._onRefresh}
+            />
+          }
+        >
+        </ListView>
       </View>
     );
   }
@@ -152,5 +252,12 @@ const styles = StyleSheet.create({
   comment: {
     fontSize: 22,
     color: '#333',
+  },
+  loading: {
+    marginVertical: 20,
+  },
+  loadingText: {
+    color: '#777',
+    textAlign: 'center',
   },
 });
