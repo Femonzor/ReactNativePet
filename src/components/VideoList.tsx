@@ -13,6 +13,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import config from '../common/config';
 import request from '../common/request';
+import VideoListItem from './VideoListItem';
 
 const width = Dimensions.get('window').width;
 
@@ -121,24 +122,7 @@ export default class VideoList extends React.Component<Props, State> {
   }
   _renderRow = (row: any) => {
     return (
-      <TouchableHighlight>
-        <View style={styles.item}>
-          <Text style={styles.title}>{row.title}</Text>
-          <ImageBackground source={{uri: row.thumb}} style={styles.thumb}>
-            <Icon name='ios-play' size={28} style={styles.play}></Icon>
-          </ImageBackground>
-          <View style={styles.itemFooter}>
-            <View style={styles.handleBox}>
-              <Icon name='ios-heart-empty' size={28} style={styles.favo}></Icon>
-              <Text style={styles.handleText}>喜欢</Text>
-            </View>
-            <View style={styles.handleBox}>
-              <Icon name='ios-chatboxes' size={28} style={styles.comment}></Icon>
-              <Text style={styles.handleText}>评论</Text>
-            </View>
-          </View>
-        </View>
-      </TouchableHighlight>
+      <VideoListItem row={row}></VideoListItem>
     );
   }
   _renderFooter = () => {
