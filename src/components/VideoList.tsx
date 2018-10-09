@@ -2,17 +2,15 @@ import * as React from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  ImageBackground,
   ListView,
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableHighlight,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import config from '../common/config';
 import request from '../common/request';
+import VideoDetail from './VideoDetail';
 import VideoListItem from './VideoListItem';
 
 const width = Dimensions.get('window').width;
@@ -23,7 +21,9 @@ const cache = {
   total: 0,
 };
 
-interface Props {}
+interface Props {
+  navigator: any;
+}
 interface State {
   videos: any;
   loading: boolean;
@@ -122,7 +122,12 @@ export default class VideoList extends React.Component<Props, State> {
   }
   _renderRow = (row: any) => {
     return (
-      <VideoListItem row={row}></VideoListItem>
+      <VideoListItem
+        row={row}
+        onSelect={() => this._loadPage(row)}
+        key={row.id}
+      >
+      </VideoListItem>
     );
   }
   _renderFooter = () => {
@@ -137,6 +142,15 @@ export default class VideoList extends React.Component<Props, State> {
       return <View style={styles.loading}></View>;
     }
     return <ActivityIndicator style={styles.loading}></ActivityIndicator>;
+  }
+  _loadPage = (row: any) => {
+    this.props.navigator.push({
+      name: 'detail',
+      component: VideoDetail,
+      params: {
+        row,
+      },
+    });
   }
   render() {
     return (

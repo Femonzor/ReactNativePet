@@ -16,6 +16,7 @@ const width = Dimensions.get('window').width;
 
 interface Props {
   row: any;
+  onSelect: any;
 }
 interface State {
   favo: boolean;
@@ -57,7 +58,7 @@ export default class VideoListItem extends React.Component<Props, State> {
   render() {
     const row = this.props.row;
     return (
-      <TouchableHighlight>
+      <TouchableHighlight onPress={this.props.onSelect}>
         <View style={styles.item}>
           <Text style={styles.title}>{row.title}</Text>
           <ImageBackground source={{uri: row.thumb}} style={styles.thumb}>

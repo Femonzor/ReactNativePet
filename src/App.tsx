@@ -1,5 +1,6 @@
 import * as React from 'react';
-import {TabBarIOS} from 'react-native';
+import { TabBarIOS } from 'react-native';
+import { Navigator } from 'react-native-deprecated-custom-components';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Account from './components/Account';
 import VideoCreate from './components/VideoCreate';
@@ -35,7 +36,18 @@ export default class App extends React.Component<Props, State> {
     return (
       <TabBarIOS tintColor='#ee735c'>
         <Icon.TabBarItem iconName='ios-videocam' selectedIconName='ios-videocam' selected={this.state.selectedTab === 'list'} onPress={this.videoPress}>
-          <VideoList></VideoList>
+          <Navigator
+            initialRoute={{
+              name: 'videoList',
+              component: VideoList,
+            }}
+            configureScene={(route: any) => Navigator.SceneConfigs.FloatFromRight}
+            renderScene={(route: any, navigator: any) => {
+              const Component = route.component;
+              return <Component {...route.params} navigator={navigator}></Component>;
+            }}
+          >
+          </Navigator>
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-recording' selectedIconName='ios-recording' selected={this.state.selectedTab === 'edit'} onPress={this.recordPress}>
           <VideoCreate></VideoCreate>

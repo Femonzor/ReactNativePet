@@ -47,6 +47,6 @@
     "no-duplicate-imports": false,
     "jsx-alignment": true,
     "jsx-no-bind": true,
-    "jsx-no-lambda": true
+    "jsx-no-lambda": false
   }
 }
