@@ -148,7 +148,7 @@ export default class VideoList extends React.Component<Props, State> {
       name: 'detail',
       component: VideoDetail,
       params: {
-        row,
+        data: row,
       },
     });
   }
