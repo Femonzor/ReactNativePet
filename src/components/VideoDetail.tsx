@@ -4,6 +4,7 @@ import {
   Dimensions,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -30,6 +31,8 @@ interface State {
   videoTotal: number;
   currentTime: number;
   playing: boolean;
+  paused: boolean;
+  videoRight: boolean;
 }
 
 export default class VideoDetail extends React.Component<Props, State> {
@@ -46,9 +49,11 @@ export default class VideoDetail extends React.Component<Props, State> {
       videoTotal: 0,
       currentTime: 0,
       playing: false,
+      paused: false,
+      videoRight: true,
     };
   }
-  _backToList = () => {
+  _pop = () => {
     this.props.navigator.pop();
   }
   _onLoadStart = () => {
@@ -80,25 +85,48 @@ export default class VideoDetail extends React.Component<Props, State> {
     });
   }
   _onError = (error: any) => {
+    this.setState({
+      videoRight: false,
+    });
     console.log(error);
     console.log('error');
   }
   _rePlay = () => {
     this.videoPlayer.seek(0);
   }
+  _pause = () => {
+    if (!this.state.paused) {
+      this.setState({
+        paused: true,
+      });
+    }
+  }
+  _resume = () => {
+    if (this.state.paused) {
+      this.setState({
+        paused: false,
+      });
+    }
+  }
   render() {
     const data = this.props.data;
     console.log(data);
     return (
       <View style={styles.container}>
-        <Text onPress={this._backToList}>视频详情页</Text>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBox} onPress={this._pop}>
+            <Icon name='ios-arrow-back' style={styles.backIcon} />
+            <Text style={styles.backText}>返回</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>视频详情页</Text>
+        </View>
         <View style={styles.videoBox}>
           <Video
             ref={ref => { this.videoPlayer = ref; }}
             source={{uri: data.video}}
             style={styles.video}
             volume={5}
-            paused={false}
+            paused={this.state.paused}
             rate={this.state.rate}
             muted={this.state.muted}
             resizeMode={this.state.resizeMode}
@@ -111,9 +139,21 @@ export default class VideoDetail extends React.Component<Props, State> {
           >
           </Video>
           {!this.state.videoReady && <ActivityIndicator color='#ee735c' style={styles.loading}></ActivityIndicator>}
+          {!this.state.videoRight && <Text style={styles.failText}>视频出错了～</Text>}
           {
             this.state.videoReady && !this.state.playing
             ? <Icon onPress={this._rePlay} name='ios-play' size={48} style={styles.playIcon} />
+            : null
+          }
+          {
+            this.state.videoReady && this.state.playing
+            ? <TouchableOpacity onPress={this._pause} style={styles.pauseBtn}>
+            {
+              this.state.paused
+              ? <Icon onPress={this._resume} name='ios-play' size={48} style={styles.resumeIcon} />
+              : <Text></Text>
+            }
+            </TouchableOpacity>
             : null
           }
           <View style={styles.progressBox}>
@@ -171,5 +211,68 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 30,
     color: '#ed7b66',
+  },
+  pauseBtn: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width,
+    height: 360,
+  },
+  resumeIcon: {
+    position: 'absolute',
+    top: 140,
+    left: width / 2 - 30,
+    width: 60,
+    height: 60,
+    paddingTop: 8,
+    paddingLeft: 22,
+    backgroundColor: 'transparent',
+    borderColor: '#fff',
+    borderWidth: 1,
+    borderRadius: 30,
+    color: '#ed7b66',
+  },
+  failText: {
+    position: 'absolute',
+    left: 0,
+    top: 180,
+    width,
+    textAlign: 'center',
+    color: '#fff',
+    backgroundColor: 'transparent',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width,
+    height: 64,
+    paddingTop: 20,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: '#fff',
+  },
+  backBox: {
+    position: 'absolute',
+    left: 12,
+    top: 32,
+    width: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    width: width - 150,
+    textAlign: 'center',
+  },
+  backIcon: {
+    color: '#999',
+    fontSize: 20,
+    marginRight: 5,
+  },
+  backText: {
+    color: '#999',
   },
 });
