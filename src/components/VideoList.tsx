@@ -62,6 +62,7 @@ export default class VideoList extends React.Component<Props, State> {
       if (data.code === 0) {
         data.data.forEach((item: any) => {
           item.thumb = item.thumb.replace('http://', 'https://');
+          item.author.avatar = item.author.avatar.replace('http://', 'https://');
         });
         let items;
         if (page !== 0) {
@@ -166,6 +167,7 @@ export default class VideoList extends React.Component<Props, State> {
           onEndReached={this._fetchMoreData}
           onEndReachedThreshold={20}
           renderFooter={this._renderFooter}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={this.state.refreshing}
