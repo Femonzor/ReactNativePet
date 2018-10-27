@@ -4,7 +4,7 @@ import {
   Dimensions,
   Image,
   ImageStyle,
-  ScrollView,
+  ListView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,8 +12,15 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
+import config from '../common/config';
+import request from '../common/request';
 
 const width = Dimensions.get('window').width;
+const cache = {
+  nextPage: 1,
+  items: [],
+  total: 0,
+};
 
 enum ResizeMode {
   Cover = 'cover',
@@ -27,6 +34,7 @@ interface Props {
 interface State {
   rate: number;
   muted: boolean;
+  comments: any;
   resizeMode: ResizeMode;
   repeat: boolean;
   videoReady: boolean;
@@ -36,15 +44,20 @@ interface State {
   playing: boolean;
   paused: boolean;
   videoRight: boolean;
+  loading: boolean;
 }
 
 export default class VideoDetail extends React.Component<Props, State> {
   videoPlayer: any;
   constructor(props: Props) {
     super(props);
+    const dataSource = new ListView.DataSource({
+      rowHasChanged: (r1, r2) => r1 !== r2,
+    });
     this.state = {
       rate: 1,
       muted: false,
+      comments: dataSource.cloneWithRows([]),
       resizeMode: ResizeMode.Contain,
       repeat: false,
       videoReady: false,
@@ -54,6 +67,7 @@ export default class VideoDetail extends React.Component<Props, State> {
       playing: false,
       paused: false,
       videoRight: true,
+      loading: false,
     };
   }
   _pop = () => {
@@ -111,9 +125,91 @@ export default class VideoDetail extends React.Component<Props, State> {
       });
     }
   }
+  _fetchData = (page: number) => {
+    this.setState({
+      loading: true,
+    });
+    console.log(`page: ${page}`);
+    request.get(`${config.api.base}${config.api.comments}`, {
+      page,
+      videoId: 125,
+      accessToken: '123a',
+    }).then((data: any) => {
+      if (data && data.code === 0) {
+        const comments = data.data;
+        comments.forEach((item: any) => {
+          item.replyBy.avatar = item.replyBy.avatar.replace('http://', 'https://');
+        });
+        let items;
+        items = cache.items.slice().concat(comments);
+        cache.nextPage += 1;
+        cache.items = items;
+        cache.total = data.total;
+        this.setState({
+          comments: this.state.comments.cloneWithRows(cache.items),
+          loading: false,
+        });
+      }
+    })
+    .catch((error: Error) => {
+      this.setState({
+        loading: false,
+      });
+      console.warn(error);
+    });
+  }
+  _fetchMoreData = () => {
+    if (!this._hasMore() || this.state.loading) {
+      return;
+    }
+    const page = cache.nextPage;
+    this._fetchData(page);
+  }
+  _hasMore = () => {
+    return cache.items.length !== cache.total;
+  }
+  _renderFooter = () => {
+    if (!this._hasMore() && cache.total !== 0) {
+      return (
+        <View style={styles.loadingMore}>
+          <Text style={styles.loadingText}>没有更多了</Text>
+        </View>
+      );
+    }
+    if (!this.state.loading) {
+      return <View style={styles.loadingMore}></View>;
+    }
+    return <ActivityIndicator style={styles.loadingMore}></ActivityIndicator>;
+  }
+  _renderHeader = () => {
+    const data = this.props.data;
+    return (
+      <View style={styles.infoBox}>
+        <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}}></Image>
+        <View style={styles.descBox}>
+          <Text style={styles.nickname}>{data.author.nickname}</Text>
+          <Text style={styles.title}>{data.title}</Text>
+        </View>
+      </View>
+    );
+  }
+  _renderRow = (row: any) => {
+    return (
+      <View key={row.id} style={styles.replyBox}>
+        <Image style={styles.replyAvatar as ImageStyle} source={{uri: row.replyBy.avatar}}></Image>
+        <View style={styles.reply}>
+          <Text style={styles.replyNickname}>{row.replyBy.nickname}</Text>
+          <Text style={styles.replyContent}>{row.content}</Text>
+        </View>
+      </View>
+    );
+  }
+  componentDidMount() {
+    this._fetchData(1);
+  }
   render() {
     const data = this.props.data;
-    console.log(data);
+    // console.log(data);
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -163,19 +259,18 @@ export default class VideoDetail extends React.Component<Props, State> {
             <View style={[styles.progressBar, {width: width * this.state.videoProgress}]}></View>
           </View>
         </View>
-        <ScrollView
+        <ListView
+          dataSource={this.state.comments}
+          renderRow={this._renderRow}
           automaticallyAdjustContentInsets={false}
+          enableEmptySections={true}
           showsVerticalScrollIndicator={false}
-          style={styles.scrollView}
+          renderHeader={this._renderHeader}
+          renderFooter={this._renderFooter}
+          onEndReached={this._fetchMoreData}
+          onEndReachedThreshold={20}
         >
-          <View style={styles.infoBox}>
-            <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}}></Image>
-            <View style={styles.descBox}>
-              <Text style={styles.nickname}>{data.author.nickname}</Text>
-              <Text style={styles.title}>{data.title}</Text>
-            </View>
-          </View>
-        </ScrollView>
+        </ListView>
       </View>
     );
   }
@@ -188,18 +283,18 @@ const styles = StyleSheet.create({
   },
   videoBox: {
     width,
-    height: 360,
+    height: width * 0.56,
     backgroundColor: '#000',
   },
   video: {
     width,
-    height: 360,
+    height: width * 0.56,
     backgroundColor: '#000',
   },
   loading: {
     position: 'absolute',
     left: 0,
-    top: 140,
+    top: 80,
     width,
     alignSelf: 'center',
     backgroundColor: 'transparent',
@@ -216,7 +311,7 @@ const styles = StyleSheet.create({
   },
   playIcon: {
     position: 'absolute',
-    top: 140,
+    top: 90,
     left: width / 2 - 30,
     width: 60,
     height: 60,
@@ -237,7 +332,7 @@ const styles = StyleSheet.create({
   },
   resumeIcon: {
     position: 'absolute',
-    top: 140,
+    top: 90,
     left: width / 2 - 30,
     width: 60,
     height: 60,
@@ -252,7 +347,7 @@ const styles = StyleSheet.create({
   failText: {
     position: 'absolute',
     left: 0,
-    top: 180,
+    top: 90,
     width,
     textAlign: 'center',
     color: '#fff',
@@ -291,8 +386,6 @@ const styles = StyleSheet.create({
   backText: {
     color: '#999',
   },
-  scrollView: {
-  },
   infoBox: {
     width,
     flexDirection: 'row',
@@ -316,5 +409,34 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 16,
     color: '#666',
+  },
+  replyBox: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginTop: 10,
+  },
+  replyAvatar: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+    marginLeft: 10,
+    borderRadius: 20,
+  },
+  replyNickname: {
+    color: '#666',
+  },
+  replyContent: {
+    color: '#666',
+    marginTop: 4,
+  },
+  reply: {
+    flex: 1,
+  },
+  loadingMore: {
+    marginVertical: 20,
+  },
+  loadingText: {
+    color: '#777',
+    textAlign: 'center',
   },
 });

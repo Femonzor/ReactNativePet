@@ -10,5 +10,6 @@ export default {
     base: 'http://rap2api.taobao.org/app/mock/83318',
     videos: '/api/videos',
     favo: '/api/favo',
+    comments: '/api/comments',
   },
 };

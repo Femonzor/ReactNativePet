@@ -57,9 +57,10 @@ export default class VideoList extends React.Component<Props, State> {
     console.log(`page: ${page}`);
     request.get(`${config.api.base}${config.api.videos}`, {
       page,
+      accessToken: '123a',
     }).then((data: any) => {
       console.log(data);
-      if (data.code === 0) {
+      if (data && data.code === 0) {
         data.data.forEach((item: any) => {
           item.thumb = item.thumb.replace('http://', 'https://');
           item.author.avatar = item.author.avatar.replace('http://', 'https://');
@@ -74,19 +75,17 @@ export default class VideoList extends React.Component<Props, State> {
         cache.nextPage += 1;
         cache.items = items;
         cache.total = data.total;
-        setTimeout(() => {
-          if (page !== 0) {
-            this.setState({
-              videos: this.state.videos.cloneWithRows(cache.items),
-              loading: false,
-            });
-          } else {
-            this.setState({
-              videos: this.state.videos.cloneWithRows(cache.items),
-              refreshing: false,
-            });
-          }
-        }, 2000);
+        if (page !== 0) {
+          this.setState({
+            videos: this.state.videos.cloneWithRows(cache.items),
+            loading: false,
+          });
+        } else {
+          this.setState({
+            videos: this.state.videos.cloneWithRows(cache.items),
+            refreshing: false,
+          });
+        }
       }
     })
     .catch((error: Error) => {
@@ -134,15 +133,15 @@ export default class VideoList extends React.Component<Props, State> {
   _renderFooter = () => {
     if (!this._hasMore() && cache.total !== 0) {
       return (
-        <View style={styles.loading}>
+        <View style={styles.loadingMore}>
           <Text style={styles.loadingText}>没有更多了</Text>
         </View>
       );
     }
     if (!this.state.loading) {
-      return <View style={styles.loading}></View>;
+      return <View style={styles.loadingMore}></View>;
     }
-    return <ActivityIndicator style={styles.loading}></ActivityIndicator>;
+    return <ActivityIndicator style={styles.loadingMore}></ActivityIndicator>;
   }
   _loadPage = (row: any) => {
     this.props.navigator.push({
@@ -164,10 +163,8 @@ export default class VideoList extends React.Component<Props, State> {
           renderRow={this._renderRow}
           automaticallyAdjustContentInsets={false}
           enableEmptySections={true}
-          onEndReached={this._fetchMoreData}
-          onEndReachedThreshold={20}
           renderFooter={this._renderFooter}
-          showsVerticalScrollIndicator={false}
+          onEndReached={this._fetchMoreData}
           refreshControl={
             <RefreshControl
               refreshing={this.state.refreshing}
@@ -176,6 +173,8 @@ export default class VideoList extends React.Component<Props, State> {
               onRefresh={this._onRefresh}
             />
           }
+          onEndReachedThreshold={20}
+          showsVerticalScrollIndicator={false}
         >
         </ListView>
       </View>
@@ -253,7 +252,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#333',
   },
-  loading: {
+  loadingMore: {
     marginVertical: 20,
   },
   loadingText: {
