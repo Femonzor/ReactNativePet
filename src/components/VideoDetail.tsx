@@ -1,22 +1,26 @@
 import * as React from 'react';
 import {
   ActivityIndicator,
+  AlertIOS,
   Dimensions,
   Image,
   ImageStyle,
   ListView,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Button from 'react-native-button';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import config from '../common/config';
 import request from '../common/request';
 
 const width = Dimensions.get('window').width;
-const cache = {
+const cache: Pet.PageData = {
   nextPage: 1,
   items: [],
   total: 0,
@@ -45,6 +49,10 @@ interface State {
   paused: boolean;
   videoRight: boolean;
   loading: boolean;
+  modalVisible: boolean;
+  isSending: boolean;
+  content: string;
+  animationType: string;
 }
 
 export default class VideoDetail extends React.Component<Props, State> {
@@ -68,6 +76,10 @@ export default class VideoDetail extends React.Component<Props, State> {
       paused: false,
       videoRight: true,
       loading: false,
+      modalVisible: false,
+      isSending: false,
+      content: '',
+      animationType: 'none',
     };
   }
   _pop = () => {
@@ -184,11 +196,26 @@ export default class VideoDetail extends React.Component<Props, State> {
   _renderHeader = () => {
     const data = this.props.data;
     return (
-      <View style={styles.infoBox}>
-        <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}}></Image>
-        <View style={styles.descBox}>
-          <Text style={styles.nickname}>{data.author.nickname}</Text>
-          <Text style={styles.title}>{data.title}</Text>
+      <View style={styles.listHeader}>
+        <View style={styles.infoBox}>
+          <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}}></Image>
+          <View style={styles.descBox}>
+            <Text style={styles.nickname}>{data.author.nickname}</Text>
+            <Text style={styles.title}>{data.title}</Text>
+          </View>
+        </View>
+        <View style={styles.commentBox}>
+          <View>
+            <TextInput
+              placeholder='请输入评论内容...'
+              style={styles.content}
+              multiline={true}
+              onFocus={this._focus}
+            />
+          </View>
+        </View>
+        <View style={styles.commentArea}>
+          <Text>精彩评论</Text>
         </View>
       </View>
     );
@@ -203,6 +230,67 @@ export default class VideoDetail extends React.Component<Props, State> {
         </View>
       </View>
     );
+  }
+  _setModalVisible = (isVisible: boolean) => {
+    this.setState({
+      modalVisible: isVisible,
+    });
+  }
+  _focus = () => {
+    this._setModalVisible(true);
+  }
+  _blur = () => {
+  }
+  _closeModal = () => {
+    this._setModalVisible(false);
+  }
+  _submit = () => {
+    if (!this.state.content) {
+      return AlertIOS.alert('留言不能为空');
+    }
+    if (this.state.isSending) {
+      return AlertIOS.alert('正在评论中');
+    }
+    this.setState({
+      isSending: true,
+    }, () => {
+      const body = {
+        access_token: 'abc',
+        videoId: 123,
+        content: this.state.content,
+      };
+      const url = `${config.api.base}${config.api.comments}`;
+      request.post(url, body)
+        .then(data => {
+          if (data && data.code === 0) {
+            let items: any[] = cache.items.slice();
+            const content = this.state.content;
+            items = [{
+              content,
+              replyBy: {
+                nickname: 'dog',
+                avatar: 'https://dummyimage.com/640x640/79eff2',
+              },
+            }].concat(items);
+            cache.items = items;
+            cache.total += 1;
+            this.setState({
+              content: '',
+              isSending: false,
+              comments: this.state.comments.cloneWithRows(cache.items),
+            });
+            this._setModalVisible(false);
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          this.setState({
+            isSending: false,
+          });
+          this._setModalVisible(false);
+          AlertIOS.alert('评论失败');
+        });
+    });
   }
   componentDidMount() {
     this._fetchData(1);
@@ -269,8 +357,36 @@ export default class VideoDetail extends React.Component<Props, State> {
           renderFooter={this._renderFooter}
           onEndReached={this._fetchMoreData}
           onEndReachedThreshold={20}
+        />
+        <Modal
+          animationType={'fade'}
+          visible={this.state.modalVisible}
+          onRequestClose={() => { this._setModalVisible(false); }}
         >
-        </ListView>
+          <View style={styles.modalContainer}>
+            <Icon
+              onPress={this._closeModal}
+              name='ios-close'
+              style={styles.closeIcon}
+            />
+            <View style={styles.commentBox}>
+              <View>
+                <TextInput
+                  placeholder='请输入评论内容...'
+                  style={styles.content}
+                  multiline={true}
+                  defaultValue={this.state.content}
+                  onChangeText={(text) => {
+                    this.setState({
+                      content: text,
+                    });
+                  }}
+                />
+              </View>
+            </View>
+            <Button style={styles.submitButton} onPress={this._submit}>评论</Button>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -280,6 +396,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5fcff',
+  },
+  modalContainer: {
+    flex: 1,
+    paddingTop: 45,
+    backgroundColor: '#fff',
+  },
+  closeIcon: {
+    alignSelf: 'center',
+    fontSize: 30,
+    color: '#ee753c',
+  },
+  submitButton: {
+    width: width - 20,
+    padding: 16,
+    marginTop: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ee735c',
+    borderRadius: 4,
+    color: '#ee735c',
+    fontSize: 18,
   },
   videoBox: {
     width,
@@ -438,5 +575,32 @@ const styles = StyleSheet.create({
   loadingText: {
     color: '#777',
     textAlign: 'center',
+  },
+  listHeader: {
+    marginTop: 10,
+    width,
+  },
+  commentBox: {
+    marginTop: 10,
+    marginBottom: 10,
+    padding: 8,
+    width,
+  },
+  content: {
+    paddingLeft: 2,
+    color: '#333',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    fontSize: 14,
+    height: 80,
+  },
+  commentArea: {
+    width,
+    paddingBottom: 6,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
 });

@@ -15,7 +15,7 @@ import VideoListItem from './VideoListItem';
 
 const width = Dimensions.get('window').width;
 
-const cache = {
+const cache: Pet.PageData = {
   nextPage: 1,
   items: [],
   total: 0,
