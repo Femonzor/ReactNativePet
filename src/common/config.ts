@@ -11,5 +11,7 @@ export default {
     videos: '/api/videos',
     favo: '/api/favo',
     comments: '/api/comments',
+    signup: '/api/user/signup',
+    verify: '/api/user/verify',
   },
 };

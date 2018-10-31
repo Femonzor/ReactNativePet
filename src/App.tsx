@@ -2,7 +2,7 @@ import * as React from 'react';
 import { TabBarIOS } from 'react-native';
 import { Navigator } from 'react-native-deprecated-custom-components';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Account from './components/Account';
+import Login from './components/Login';
 import VideoCreate from './components/VideoCreate';
 import VideoList from './components/VideoList';
 
@@ -53,7 +53,7 @@ export default class App extends React.Component<Props, State> {
           <VideoCreate></VideoCreate>
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this.morePress}>
-          <Account></Account>
+          <Login></Login>
         </Icon.TabBarItem>
       </TabBarIOS>
     );
