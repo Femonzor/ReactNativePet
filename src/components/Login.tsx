@@ -1,11 +1,12 @@
 import * as React from 'react';
 import {AlertIOS, StyleSheet, Text, TextInput, View} from 'react-native';
 import Button from 'react-native-button';
-import countdown from 'react-native-sk-countdown';
+import CountDownButton from 'react-native-smscode-count-down';
 import config from '../common/config';
 import request from '../common/request';
 
 interface Props {
+  afterLogin: Function;
 }
 
 interface State {
@@ -14,8 +15,6 @@ interface State {
   verifyCode: string;
   countingDone: boolean;
 }
-
-const CountDownText = countdown.CountDownText;
 
 export default class Login extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -32,7 +31,7 @@ export default class Login extends React.Component<Props, State> {
       codeSent: true,
     });
   }
-  _sendVerifyCode = () => {
+  _sendVerifyCode = (shouldStartCountting: Function) => {
     const phoneNumber = this.state.phoneNumber;
     if (!phoneNumber) {
       return AlertIOS.alert('手机号不能为空');
@@ -45,6 +44,7 @@ export default class Login extends React.Component<Props, State> {
       .then(data => {
         if (data && data.code === 0) {
           this._showVerifyCode();
+          shouldStartCountting(this.state.codeSent);
         } else {
           AlertIOS.alert('获取验证码失败，请检查手机号是否正确');
         }
@@ -59,6 +59,27 @@ export default class Login extends React.Component<Props, State> {
     });
   }
   _submit = () => {
+    const phoneNumber = this.state.phoneNumber;
+    const verifyCode = this.state.verifyCode;
+    if (!phoneNumber || !verifyCode) {
+      return AlertIOS.alert('手机号和验证码都不能为空');
+    }
+    const body = {
+      phoneNumber,
+      verifyCode,
+    };
+    const verifyUrl = `${config.api.base}${config.api.verify}`;
+    request.post(verifyUrl, body)
+      .then(data => {
+        if (data && data.code === 0) {
+          this.props.afterLogin(data.data);
+        } else {
+          AlertIOS.alert('登录失败，请检查手机号是否正确');
+        }
+      })
+      .catch(error => {
+        AlertIOS.alert('登录异常，请检查网络是否良好');
+      });
   }
   render() {
     return (
@@ -77,44 +98,32 @@ export default class Login extends React.Component<Props, State> {
               });
             }}
           />
-          {
-            this.state.codeSent
-            ? <View style={styles.verifyCodeBox}>
-                <TextInput
-                  placeholder='输入手机号'
-                  autoCapitalize={'none'}
-                  autoCorrect={false}
-                  keyboardType={'number-pad'}
-                  style={styles.inputField}
-                  onChangeText={text => {
-                    this.setState({
-                      verifyCode: text,
-                    });
-                  }}
-                />
-                {
-                  this.state.countingDone
-                  ? <Button style={styles.countBtn} onPress={this._sendVerifyCode}>获取验证码</Button>
-                  : <CountDownText
-                      style={styles.countBtn}
-                      countType='seconds'
-                      auto={true}
-                      afterEnd={this._countingDone}
-                      timeLeft={10}
-                      step={-1}
-                      startText='获取验证码'
-                      endText='获取验证码'
-                      intervalText={(second: string) => `剩余秒数${second}`}
-                  />
-                }
-              </View>
-            : null
-          }
-          {
-            this.state.codeSent
-            ? <Button style={styles.btn} onPress={this._submit}>登录</Button>
-            : <Button style={styles.btn} onPress={this._sendVerifyCode}>获取验证码</Button>
-          }
+          <View style={styles.verifyCodeBox}>
+            <TextInput
+              placeholder='输入验证码'
+              autoCapitalize={'none'}
+              autoCorrect={false}
+              style={styles.codeField}
+              onChangeText={text => {
+                this.setState({
+                  verifyCode: text,
+                });
+              }}
+            />
+            <CountDownButton
+              style={styles.countBtn}
+              timerCount={60}
+              timerTitle={'获取验证码'}
+              textStyle={styles.btnCodeText}
+              timerActiveTitle={['重新获取(', 's)']}
+              enable={!!this.state.phoneNumber}
+              onClick={this._sendVerifyCode}
+              timerEnd={() => {
+                console.log('countdown end');
+              }}
+            />
+          </View>
+          <Button style={styles.btn} onPress={this._submit}>登录</Button>
         </View>
       </View>
     );
@@ -137,13 +146,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inputField: {
-    flex: 1,
     height: 40,
     padding: 5,
     color: '#666',
     fontSize: 16,
     backgroundColor: '#fff',
     borderRadius: 4,
+  },
+  codeField: {
+    height: 40,
+    padding: 5,
+    color: '#666',
+    fontSize: 16,
+    backgroundColor: '#fff',
+    borderRadius: 4,
+    flex: 1,
   },
   btn: {
     marginTop: 10,
@@ -160,15 +177,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   countBtn: {
-    width: 110,
     height: 40,
     padding: 10,
-    marginLeft: 8,
-    backgroundColor: 'transparent',
+    paddingLeft: 8,
+    paddingRight: 8,
+    backgroundColor: '#ee735c',
     borderColor: '#ee735c',
-    textAlign: 'left',
-    fontWeight: '600',
-    fontSize: 15,
     borderRadius: 2,
+  },
+  btnCodeText: {
+    color: '#fff',
+    alignSelf: 'center',
+  },
+  btnCountDownText: {
+    alignSelf: 'flex-start',
   },
 });
