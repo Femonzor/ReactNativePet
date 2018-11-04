@@ -18,7 +18,7 @@ export default class App extends React.Component<Props, State> {
     super(props);
     this.state = {
       user: null,
-      selectedTab: 'list',
+      selectedTab: 'account',
       login: false,
     };
   }
@@ -95,7 +95,7 @@ export default class App extends React.Component<Props, State> {
           <VideoCreate></VideoCreate>
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this._morePress}>
-          <Account/>
+          <Account user={null} />
         </Icon.TabBarItem>
       </TabBarIOS>
     );

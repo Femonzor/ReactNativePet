@@ -1,7 +1,20 @@
 import * as React from 'react';
-import {AsyncStorage, StyleSheet, Text, View} from 'react-native';
+import {
+  AsyncStorage,
+  Dimensions,
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/SimpleLineIcons';
+
+const width = Dimensions.get('window').width;
 
 interface Props {
+  user: any;
 }
 
 interface State {
@@ -12,52 +25,54 @@ export default class Account extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
-      user: {
-        nickname: '老四',
-        times: 0,
-      },
+      user: this.props.user || {},
     };
   }
   componentDidMount() {
-    const user = this.state.user;
-    user.times += 1;
-    AsyncStorage
-      .setItem('user', JSON.stringify(user))
-      .catch(error => {
-        console.log(error);
-        console.log('save fails');
-      })
-      .then(() => {
-        console.log('save ok');
-      });
-    AsyncStorage
-      .getItem('user')
-      .catch(error => {
-        console.log(error);
-        console.log('get fails');
-      })
-      .then(data => {
-        console.log(data);
-        data = data || '';
-        data = JSON.parse(data);
-        this.setState({
-          user: data,
-        });
-      });
+    AsyncStorage.getItem('user')
+     .then((data) => {
+       let user;
+       if (data) {
+         console.log(data);
+         user = JSON.parse(data);
+       }
+       if (user && user.accessToken) {
+         this.setState({
+           user,
+         });
+       }
+     });
   }
   render() {
+    const user = this.state.user;
     return (
       <View style={styles.container}>
-        <Text style={[styles.item, styles.item1]}>老大</Text>
-        <View style={[styles.item, styles.item2]}>
-          <Text>老二</Text>
+        <View style={styles.toolbar}>
+          <Text style={styles.toolbarTitle}>我的账户</Text>
         </View>
-        <View style={[styles.item, styles.item1]}>
-          <Text>老老三老三老三老三???</Text>
-        </View>
-        <View style={[styles.item, styles.item3]}>
-          <Text>{this.state.user.nickname}不爽了{this.state.user.times}次</Text>
-        </View>
+        {
+          user.avatar
+          ? <TouchableOpacity style={styles.avatarContainer}>
+              <ImageBackground source={{uri: user.avatar}} style={styles.avatarContainer}>
+                <View style={styles.avatarBox}>
+                  <Image
+                    source={{uri: user.avatar}}
+                    style={styles.avatar}
+                  />
+                </View>
+                <Text style={styles.avatarTip}>点这里换宠物头像</Text>
+              </ImageBackground>
+            </TouchableOpacity>
+          : <View style={styles.avatarContainer}>
+              <Text style={styles.avatarTip}>添加宠物头像</Text>
+              <TouchableOpacity style={styles.avatarBox}>
+                <Icon
+                  name='cloud-upload'
+                  style={styles.plusIcon}
+                />
+              </TouchableOpacity>
+            </View>
+        }
       </View>
     );
   }
@@ -66,31 +81,52 @@ export default class Account extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 30,
-    paddingBottom: 70,
+  },
+  toolbar: {
     flexDirection: 'row',
-    flexWrap: 'nowrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f60',
+    paddingTop: 25,
+    paddingBottom: 12,
+    backgroundColor: '#ee735c',
   },
-  item: {
-    color: '#fff',
-    backgroundColor: '#000',
-  },
-  item1: {
-    backgroundColor: '#ccc',
-    // alignSelf: 'flex-start',
+  toolbarTitle: {
     flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  item2: {
-    backgroundColor: '#999',
-    // alignSelf: 'center',
-    width: 100,
-  },
-  item3: {
+  avatarContainer: {
+    width,
+    height: 140,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#666',
-    // alignSelf: 'flex-end',
-    flex: 2,
+  },
+  avatar: {
+    marginBottom: 15,
+    width: width * 0.2,
+    height: width * 0.2,
+    resizeMode: 'cover',
+    borderRadius: width * 0.1,
+  },
+  avatarTip: {
+    color: '#fff',
+    backgroundColor: 'transparent',
+    fontSize: 14,
+  },
+  avatarBox: {
+    marginTop: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  plusIcon: {
+    padding: 20,
+    paddingLeft: 25,
+    paddingRight: 25,
+    color: '#999',
+    fontSize: 24,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
 });
