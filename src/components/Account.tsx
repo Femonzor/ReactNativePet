@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
 
 const width = Dimensions.get('window').width;
@@ -27,6 +28,33 @@ export default class Account extends React.Component<Props, State> {
     this.state = {
       user: this.props.user || {},
     };
+  }
+  _pickPhoto = () => {
+    const options = {
+      title: '选择头像',
+      cancelButtonTitle: '取消',
+      takePhotoButtonTitle: '拍照',
+      chooseFromLibraryButtonTitle: '选择相册',
+      quality: 0.75,
+      allowsEditing: true,
+      noData: false,
+      storageOptions: {
+        skipBackup: true,
+        path: 'images',
+      },
+    };
+    console.log(ImagePicker);
+    ImagePicker.showImagePicker(options, (response) => {
+      if (response.didCancel) {
+        return;
+      }
+      const avatarData = `data:image/jpeg;base64,${response.data}`;
+      const user = this.state.user;
+      user.avatar = avatarData;
+      this.setState({
+        user,
+      });
+    });
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
@@ -52,7 +80,7 @@ export default class Account extends React.Component<Props, State> {
         </View>
         {
           user.avatar
-          ? <TouchableOpacity style={styles.avatarContainer}>
+          ? <TouchableOpacity style={styles.avatarContainer} onPress={this._pickPhoto}>
               <ImageBackground source={{uri: user.avatar}} style={styles.avatarContainer}>
                 <View style={styles.avatarBox}>
                   <Image

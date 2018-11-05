@@ -16,6 +16,7 @@
     "react-native": "0.56.0",
     "react-native-button": "^2.3.0",
     "react-native-deprecated-custom-components": "^0.1.2",
+    "react-native-image-picker": "^0.27.1",
     "react-native-smscode-count-down": "^0.1.14",
     "react-native-vector-icons": "^5.0.0",
     "react-native-video": "^3.2.1"
