@@ -1,4 +1,4 @@
-package com.react-native-pet;
+package com.reactnativepet;
 
 import com.facebook.react.ReactActivity;
 
@@ -10,6 +10,6 @@ public class MainActivity extends ReactActivity {
      */
     @Override
     protected String getMainComponentName() {
-        return "react-native-pet";
+        return "ReactNativePet";
     }
 }
