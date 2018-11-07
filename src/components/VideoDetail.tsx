@@ -189,16 +189,16 @@ export default class VideoDetail extends React.Component<Props, State> {
       );
     }
     if (!this.state.loading) {
-      return <View style={styles.loadingMore}></View>;
+      return <View style={styles.loadingMore} />;
     }
-    return <ActivityIndicator style={styles.loadingMore}></ActivityIndicator>;
+    return <ActivityIndicator style={styles.loadingMore} />;
   }
   _renderHeader = () => {
     const data = this.props.data;
     return (
       <View style={styles.listHeader}>
         <View style={styles.infoBox}>
-          <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}}></Image>
+          <Image style={styles.avatar as ImageStyle} source={{uri: data.author.avatar}} />
           <View style={styles.descBox}>
             <Text style={styles.nickname}>{data.author.nickname}</Text>
             <Text style={styles.title}>{data.title}</Text>
@@ -223,7 +223,7 @@ export default class VideoDetail extends React.Component<Props, State> {
   _renderRow = (row: any) => {
     return (
       <View key={row.id} style={styles.replyBox}>
-        <Image style={styles.replyAvatar as ImageStyle} source={{uri: row.replyBy.avatar}}></Image>
+        <Image style={styles.replyAvatar as ImageStyle} source={{uri: row.replyBy.avatar}} />
         <View style={styles.reply}>
           <Text style={styles.replyNickname}>{row.replyBy.nickname}</Text>
           <Text style={styles.replyContent}>{row.content}</Text>
@@ -323,9 +323,8 @@ export default class VideoDetail extends React.Component<Props, State> {
             onProgress={this._onProgress}
             onEnd={this._onEnd}
             onError={this._onError}
-          >
-          </Video>
-          {!this.state.videoReady && <ActivityIndicator color='#ee735c' style={styles.loading}></ActivityIndicator>}
+          />
+          {!this.state.videoReady && <ActivityIndicator color='#ee735c' style={styles.loading} />}
           {!this.state.videoRight && <Text style={styles.failText}>视频出错了～</Text>}
           {
             this.state.videoReady && !this.state.playing
@@ -338,13 +337,13 @@ export default class VideoDetail extends React.Component<Props, State> {
             {
               this.state.paused
               ? <Icon onPress={this._resume} name='ios-play' size={48} style={styles.resumeIcon} />
-              : <Text></Text>
+              : <Text />
             }
             </TouchableOpacity>
             : null
           }
           <View style={styles.progressBox}>
-            <View style={[styles.progressBar, {width: width * this.state.videoProgress}]}></View>
+            <View style={[styles.progressBar, {width: width * this.state.videoProgress}]} />
           </View>
         </View>
         <ListView

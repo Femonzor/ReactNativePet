@@ -62,15 +62,15 @@ export default class VideoListItem extends React.Component<Props, State> {
         <View style={styles.item}>
           <Text style={styles.title}>{row.title}</Text>
           <ImageBackground source={{uri: row.thumb}} style={styles.thumb}>
-            <Icon name='ios-play' size={28} style={styles.play}></Icon>
+            <Icon name='ios-play' size={28} style={styles.play} />
           </ImageBackground>
           <View style={styles.itemFooter}>
             <View style={styles.handleBox}>
-              <Icon name={this.state.favo ? 'ios-heart' : 'ios-heart-empty'} size={28} style={[styles.favo, this.state.favo ? null : styles.unfavo]} onPress={this._favo}></Icon>
+              <Icon name={this.state.favo ? 'ios-heart' : 'ios-heart-empty'} size={28} style={[styles.favo, this.state.favo ? null : styles.unfavo]} onPress={this._favo} />
               <Text style={styles.handleText} onPress={this._favo}>喜欢</Text>
             </View>
             <View style={styles.handleBox}>
-              <Icon name='ios-chatboxes' size={28} style={styles.comment}></Icon>
+              <Icon name='ios-chatboxes' size={28} style={styles.comment} />
               <Text style={styles.handleText}>评论</Text>
             </View>
           </View>

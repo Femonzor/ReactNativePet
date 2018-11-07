@@ -1,6 +1,6 @@
 {
   "extends": [
-    "tslint-react-recommended"
+    "tslint-react"
   ],
   "rules": {
     "ordered-imports": [
@@ -31,7 +31,6 @@
     ],
     "no-empty": false,
     "no-submodule-imports": false,
-    "no-implicit-dependencies": false,
     "no-constant-condition": false,
     "triple-equals": [
       true,
@@ -44,9 +43,9 @@
         "SwitchCase": 1
       }
     ],
-    "no-duplicate-imports": false,
     "jsx-alignment": true,
     "jsx-no-bind": true,
-    "jsx-no-lambda": false
+    "jsx-no-lambda": false,
+    "jsx-no-multiline-js": false
   }
 }

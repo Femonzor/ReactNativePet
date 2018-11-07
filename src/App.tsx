@@ -86,13 +86,12 @@ export default class App extends React.Component<Props, State> {
             configureScene={(route: any) => Navigator.SceneConfigs.FloatFromRight}
             renderScene={(route: any, navigator: any) => {
               const Component = route.component;
-              return <Component {...route.params} navigator={navigator}></Component>;
+              return <Component {...route.params} navigator={navigator} />;
             }}
-          >
-          </Navigator>
+          />
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-recording' selectedIconName='ios-recording' selected={this.state.selectedTab === 'edit'} onPress={this._recordPress}>
-          <VideoCreate></VideoCreate>
+          <VideoCreate />
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this._morePress}>
           <Account user={null} />

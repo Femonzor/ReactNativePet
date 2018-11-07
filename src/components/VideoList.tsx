@@ -126,8 +126,7 @@ export default class VideoList extends React.Component<Props, State> {
         row={row}
         onSelect={() => this._loadPage(row)}
         key={row.id}
-      >
-      </VideoListItem>
+      />
     );
   }
   _renderFooter = () => {
@@ -139,9 +138,9 @@ export default class VideoList extends React.Component<Props, State> {
       );
     }
     if (!this.state.loading) {
-      return <View style={styles.loadingMore}></View>;
+      return <View style={styles.loadingMore} />;
     }
-    return <ActivityIndicator style={styles.loadingMore}></ActivityIndicator>;
+    return <ActivityIndicator style={styles.loadingMore} />;
   }
   _loadPage = (row: any) => {
     this.props.navigator.push({
@@ -175,8 +174,7 @@ export default class VideoList extends React.Component<Props, State> {
           }
           onEndReachedThreshold={20}
           showsVerticalScrollIndicator={false}
-        >
-        </ListView>
+        />
       </View>
     );
   }
