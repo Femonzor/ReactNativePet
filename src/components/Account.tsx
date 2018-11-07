@@ -4,10 +4,11 @@ import {
   Dimensions,
   Image,
   ImageBackground,
+  ImageStyle,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
@@ -58,7 +59,7 @@ export default class Account extends React.Component<Props, State> {
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
-     .then((data) => {
+     .then((data: any) => {
        let user;
        if (data) {
          console.log(data);
@@ -85,7 +86,7 @@ export default class Account extends React.Component<Props, State> {
                 <View style={styles.avatarBox}>
                   <Image
                     source={{uri: user.avatar}}
-                    style={styles.avatar}
+                    style={styles.avatar as ImageStyle}
                   />
                 </View>
                 <Text style={styles.avatarTip}>点这里换宠物头像</Text>
