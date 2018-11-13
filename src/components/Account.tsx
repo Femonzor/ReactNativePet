@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
+import sha1 from 'sha1';
+import config from '../common/config';
+import request from '../common/request';
 
 const width = Dimensions.get('window').width;
 
@@ -22,6 +25,16 @@ interface Props {
 interface State {
   user: any;
 }
+
+const cloudinary = {
+  cloud_name: 'yang',
+  api_key: '668661248534544',
+  api_secret: 'x0SRqJt1Iy8wwG4DLil6y84s1UI',
+  base: 'http://res.cloudinary.com/yang',
+  image: 'https://api.cloudinary.com/v1_1/yang/image/upload',
+  video: 'https://api.cloudinary.com/v1_1/yang/video/upload',
+  audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
+};
 
 export default class Account extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -55,16 +68,39 @@ export default class Account extends React.Component<Props, State> {
       this.setState({
         user,
       });
+      const timestamp = Date.now;
+      const tags = 'app,avatar';
+      const folder = 'avatar';
+      const accessToken = this.state.user.accessToken;
+      const signatureUrl = `${config.api.base}${config.api.signature}`;
+      request.post(signatureUrl, {
+        accessToken,
+        timestamp,
+        type: 'avatar',
+      })
+      .then(data => {
+        if (data && data.code === 0) {
+          let signature = `folder=${folder}&tags=${tags}&timestamp=${timestamp}${cloudinary.api_secret}`;
+          signature = sha1(signature) as string;
+          const body = new FormData();
+          body.append('folder', folder);
+          body.append('signature', signature);
+          body.append('tags', tags);
+          body.append('api_key', cloudinary.api_key);
+          body.append('resource_type', 'image');
+          body.append('file', avatarData);
+          this._uploadImage(body);
+        }
+      });
     });
+  }
+  _uploadImage(body: FormData) {
+    const xhr = new XMLHttpRequest();
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
      .then((data: any) => {
-       let user;
-       if (data) {
-         console.log(data);
-         user = JSON.parse(data);
-       }
+       const user = data ? JSON.parse(data) : null;
        if (user && user.accessToken) {
          this.setState({
            user,
@@ -92,15 +128,15 @@ export default class Account extends React.Component<Props, State> {
                 <Text style={styles.avatarTip}>点这里换宠物头像</Text>
               </ImageBackground>
             </TouchableOpacity>
-          : <View style={styles.avatarContainer}>
+          : <TouchableOpacity onPress={this._pickPhoto} style={styles.avatarContainer}>
               <Text style={styles.avatarTip}>添加宠物头像</Text>
-              <TouchableOpacity style={styles.avatarBox}>
+              <View style={styles.avatarBox}>
                 <Icon
                   name='cloud-upload'
                   style={styles.plusIcon}
                 />
-              </TouchableOpacity>
-            </View>
+              </View>
+            </TouchableOpacity>
         }
       </View>
     );
