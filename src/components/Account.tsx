@@ -6,13 +6,16 @@ import {
   Image,
   ImageBackground,
   ImageStyle,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import * as Progress from 'react-native-progress';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
 import sha1 from 'sha1';
 import config from '../common/config';
@@ -28,6 +31,7 @@ interface State {
   user: any;
   avatarProgress: number;
   avatarUploading: boolean;
+  modalVisible: boolean;
 }
 
 const cloudinary = {
@@ -40,7 +44,11 @@ const cloudinary = {
   audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
 };
 
-const avatar = (id: String, type: String) => `${cloudinary.base}/${type}/upload/${id}`;
+const avatar = (id: string, type: string) => {
+  if (id.indexOf('http') > -1) return id;
+  if (id.indexOf('data:image') > -1) return id;
+  return `${cloudinary.base}/${type}/upload/${id}`;
+};
 
 export default class Account extends React.Component<Props, State> {
   constructor(props: Props) {
@@ -49,7 +57,18 @@ export default class Account extends React.Component<Props, State> {
       user: this.props.user || {},
       avatarProgress: 0,
       avatarUploading: false,
+      modalVisible: false,
     };
+  }
+  _edit = () => {
+    this.setState({
+      modalVisible: true,
+    });
+  }
+  _closeModal = () => {
+    this.setState({
+      modalVisible: false,
+    });
   }
   _pickPhoto = () => {
     const options = {
@@ -139,6 +158,7 @@ export default class Account extends React.Component<Props, State> {
           avatarUploading: false,
           user,
         });
+        this._asyncUser(true);
       }
     };
     if (xhr.upload) {
@@ -152,6 +172,35 @@ export default class Account extends React.Component<Props, State> {
       };
     }
     xhr.send(body);
+  }
+  _asyncUser = (isAvatar: boolean) => {
+    let user = this.state.user;
+    if (user && user.accessToken) {
+      const url = `${config.api.base}${config.api.update}`;
+      console.log(url);
+      request.post(url, user)
+        .then(data => {
+          if (data && data.code === 0) {
+            user = data.data;
+            if (isAvatar) {
+              AlertIOS.alert('头像更新成功');
+            }
+            this.setState({
+              user,
+            }, () => {
+              console.log(user);
+              AsyncStorage.setItem('user', JSON.stringify(user));
+            });
+          }
+        });
+    }
+  }
+  _changeUserState = (key: string, value: any) => {
+    const user = this.state.user;
+    user[key] = value;
+    this.setState({
+      user,
+    });
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
@@ -169,12 +218,13 @@ export default class Account extends React.Component<Props, State> {
     return (
       <View style={styles.container}>
         <View style={styles.toolbar}>
-          <Text style={styles.toolbarTitle}>我的账户</Text>
+          <Text style={styles.toolbarTitle}>宠物的账户</Text>
+          <Text style={styles.toolbarEdit} onPress={this._edit}>编辑</Text>
         </View>
         {
           user.avatar
           ? <TouchableOpacity style={styles.avatarContainer} onPress={this._pickPhoto}>
-              <ImageBackground source={{uri: user.avatar}} style={styles.avatarContainer}>
+              <ImageBackground source={{uri: avatar(user.avatar, 'image')}} style={styles.avatarContainer}>
                 <View style={styles.avatarBox}>
                 {
                   this.state.avatarUploading
@@ -185,7 +235,7 @@ export default class Account extends React.Component<Props, State> {
                     progress={this.state.avatarProgress}
                   />
                   : <Image
-                    source={{uri: user.avatar}}
+                    source={{uri: avatar(user.avatar, 'image')}}
                     style={styles.avatar as ImageStyle}
                   />
                 }
@@ -212,6 +262,76 @@ export default class Account extends React.Component<Props, State> {
               </View>
             </TouchableOpacity>
         }
+        <Modal
+          animationType={'fade'}
+          visible={this.state.modalVisible}
+        >
+          <View style={styles.modalContainer}>
+            <Ionicons
+              name='ios-close'
+              style={styles.closeIcon}
+              onPress={this._closeModal}
+            />
+            <View style={styles.fieldItem}>
+              <Text style={styles.label}>昵称</Text>
+              <TextInput
+                placeholder='输入你的昵称'
+                style={styles.inputField}
+                autoCapitalize={'none'}
+                autoCorrect={false}
+                defaultValue={user.nickname}
+                onChangeText={(text: string) => {
+                  this._changeUserState('nickname', text);
+                }}
+              />
+            </View>
+            <View style={styles.fieldItem}>
+              <Text style={styles.label}>宠物品种</Text>
+              <TextInput
+                placeholder='输入宠物品种'
+                style={styles.inputField}
+                autoCapitalize={'none'}
+                autoCorrect={false}
+                defaultValue={user.breed}
+                onChangeText={(text: string) => {
+                  this._changeUserState('breed', text);
+                }}
+              />
+            </View>
+            <View style={styles.fieldItem}>
+              <Text style={styles.label}>年龄</Text>
+              <TextInput
+                placeholder='输入宠物年龄'
+                style={styles.inputField}
+                autoCapitalize={'none'}
+                autoCorrect={false}
+                defaultValue={user.age}
+                onChangeText={(text: string) => {
+                  this._changeUserState('age', text);
+                }}
+              />
+            </View>
+            <View style={styles.fieldItem}>
+              <Text style={styles.label}>性别</Text>
+              <Ionicons.Button
+                onPress={() => {
+                  this._changeUserState('gender', 'male');
+                }}
+                style={user.gender === 'male' ? styles.genderChecked as any : styles.gender as any}
+                name='ios-paw'
+              >男
+              </Ionicons.Button>
+              <Ionicons.Button
+                onPress={() => {
+                  this._changeUserState('gender', 'female');
+                }}
+                style={user.gender === 'female' ? styles.genderChecked as any : styles.gender as any}
+                name='md-paw'
+              >女
+              </Ionicons.Button>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -267,5 +387,54 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
+  },
+  toolbarEdit: {
+    position: 'absolute',
+    right: 10,
+    top: 26,
+    color: '#fff',
+    textAlign: 'right',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
+    paddingTop: 50,
+    backgroundColor: '#fff',
+  },
+  fieldItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 50,
+    paddingLeft: 15,
+    paddingRight: 15,
+    borderColor: '#eee',
+    borderBottomWidth: 1,
+  },
+  label: {
+    color: '#ccc',
+    marginRight: 10,
+  },
+  inputField: {
+    height: 50,
+    flex: 1,
+    color: '#666',
+    fontSize: 14,
+  },
+  closeIcon: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    fontSize: 32,
+    right: 20,
+    top: 30,
+    color: '#ee735c',
+  },
+  gender: {
+    backgroundColor: '#ccc',
+  },
+  genderChecked: {
+    backgroundColor: '#ee735c',
   },
 });
