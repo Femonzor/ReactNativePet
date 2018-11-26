@@ -13,5 +13,6 @@ export default {
     comments: '/api/comments',
     signup: '/api/user/signup',
     verify: '/api/user/verify',
+    signature: '/api/signature',
   },
 };
