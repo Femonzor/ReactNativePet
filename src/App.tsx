@@ -68,6 +68,13 @@ export default class App extends React.Component<Props, State> {
         });
       });
   }
+  _logout = () => {
+    AsyncStorage.removeItem('user');
+    this.setState({
+      login: false,
+      user: null,
+    });
+  }
   componentDidMount() {
     this._asyncAppStatus();
   }
@@ -94,7 +101,7 @@ export default class App extends React.Component<Props, State> {
           <VideoCreate />
         </Icon.TabBarItem>
         <Icon.TabBarItem iconName='ios-more' selectedIconName='ios-more' selected={this.state.selectedTab === 'account'} onPress={this._morePress}>
-          <Account user={null} />
+          <Account user={this.state.user} logout={this._logout} />
         </Icon.TabBarItem>
       </TabBarIOS>
     );

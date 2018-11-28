@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Button from 'react-native-button';
 import ImagePicker from 'react-native-image-picker';
 import * as Progress from 'react-native-progress';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -25,6 +26,7 @@ const width = Dimensions.get('window').width;
 
 interface Props {
   user: any;
+  logout: Function;
 }
 
 interface State {
@@ -188,8 +190,8 @@ export default class Account extends React.Component<Props, State> {
             this.setState({
               user,
             }, () => {
-              console.log(user);
               AsyncStorage.setItem('user', JSON.stringify(user));
+              this._closeModal();
             });
           }
         });
@@ -201,6 +203,12 @@ export default class Account extends React.Component<Props, State> {
     this.setState({
       user,
     });
+  }
+  _submit = () => {
+    this._asyncUser(false);
+  }
+  _logout = () => {
+    this.props.logout();
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
@@ -305,7 +313,7 @@ export default class Account extends React.Component<Props, State> {
                 style={styles.inputField}
                 autoCapitalize={'none'}
                 autoCorrect={false}
-                defaultValue={user.age}
+                defaultValue={user.age ? user.age + '' : user.age}
                 onChangeText={(text: string) => {
                   this._changeUserState('age', text);
                 }}
@@ -330,8 +338,10 @@ export default class Account extends React.Component<Props, State> {
               >女
               </Ionicons.Button>
             </View>
+            <Button style={styles.btn} onPress={this._submit}>保存资料</Button>
           </View>
         </Modal>
+        <Button style={styles.btn} onPress={this._logout}>退出登录</Button>
       </View>
     );
   }
@@ -436,5 +446,16 @@ const styles = StyleSheet.create({
   },
   genderChecked: {
     backgroundColor: '#ee735c',
+  },
+  btn: {
+    marginTop: 25,
+    padding: 10,
+    marginLeft: 10,
+    marginRight: 10,
+    backgroundColor: 'transparent',
+    borderColor: '#ee735c',
+    borderWidth: 1,
+    borderRadius: 4,
+    color: '#ee735c',
   },
 });
