@@ -18,7 +18,6 @@ import ImagePicker from 'react-native-image-picker';
 import * as Progress from 'react-native-progress';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Icon from 'react-native-vector-icons/SimpleLineIcons';
-import sha1 from 'sha1';
 import config from '../common/config';
 import request from '../common/request';
 
@@ -37,13 +36,12 @@ interface State {
 }
 
 const cloudinary = {
-  cloud_name: 'yang',
   api_key: '668661248534544',
-  api_secret: 'x0SRqJt1Iy8wwG4DLil6y84s1UI',
+  audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
   base: 'http://res.cloudinary.com/yang',
+  cloud_name: 'yang',
   image: 'https://api.cloudinary.com/v1_1/yang/image/upload',
   video: 'https://api.cloudinary.com/v1_1/yang/video/upload',
-  audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
 };
 
 const avatar = (id: string, type: string) => {
@@ -107,9 +105,7 @@ export default class Account extends React.Component<Props, State> {
       .then(data => {
         console.log(data);
         if (data && data.code === 0) {
-          let signature = `folder=${folder}&tags=${tags}&timestamp=${timestamp}${cloudinary.api_secret}`;
-          console.log(signature);
-          signature = sha1(signature) as string;
+          const signature = data.data;
           const body = new FormData();
           body.append('folder', folder);
           body.append('signature', signature);

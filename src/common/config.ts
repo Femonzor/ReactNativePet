@@ -7,7 +7,8 @@ export default {
     },
   },
   api: {
-    base: 'http://rap2api.taobao.org/app/mock/83318',
+    // base: 'http://rap2api.taobao.org/app/mock/83318',
+    base: 'http://localhost:3001',
     videos: '/api/videos',
     favo: '/api/favo',
     comments: '/api/comments',
