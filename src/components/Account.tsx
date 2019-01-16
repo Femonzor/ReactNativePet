@@ -360,6 +360,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
+  toolbarEdit: {
+    position: 'absolute',
+    right: 10,
+    top: 26,
+    color: '#fff',
+    textAlign: 'right',
+    fontWeight: '600',
+    fontSize: 14,
+  },
   avatarContainer: {
     width,
     height: 140,
@@ -393,15 +402,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
-  },
-  toolbarEdit: {
-    position: 'absolute',
-    right: 10,
-    top: 26,
-    color: '#fff',
-    textAlign: 'right',
-    fontWeight: '600',
-    fontSize: 14,
   },
   modalContainer: {
     flex: 1,
