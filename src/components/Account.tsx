@@ -25,7 +25,7 @@ const width = Dimensions.get('window').width;
 
 interface Props {
   user: any;
-  logout: Function;
+  logout: () => void;
 }
 
 interface State {
@@ -45,8 +45,8 @@ const cloudinary = {
 };
 
 const avatar = (id: string, type: string) => {
-  if (id.indexOf('http') > -1) return id;
-  if (id.indexOf('data:image') > -1) return id;
+  if (id.indexOf('http') > -1) { return id; }
+  if (id.indexOf('data:image') > -1) { return id; }
   return `${cloudinary.base}/${type}/upload/${id}`;
 };
 

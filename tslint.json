@@ -1,27 +1,25 @@
 {
   "extends": [
-    "tslint-react"
+    "tslint:latest",
+    "tslint-react",
+    "tslint-eslint-rules",
+    "tslint-config-prettier",
+    "tslint-plugin-prettier"
   ],
   "rules": {
-    "ordered-imports": [
-      true
-    ],
+    "rules": {
+      "prettier": true
+    },
+    "ordered-imports": true,
     "quotemark": [
       true,
       "single",
       "jsx-single",
       "avoid-escape"
     ],
-    "semicolon": [
-      true,
-      "always"
-    ],
-    "member-access": [
-      false
-    ],
-    "member-ordering": [
-      false
-    ],
+    "semicolon": [true, "always"],
+    "member-access": false,
+    "member-ordering": false,
     "trailing-comma": [
       true,
       {
@@ -32,10 +30,7 @@
     "no-empty": false,
     "no-submodule-imports": false,
     "no-constant-condition": false,
-    "triple-equals": [
-      true,
-      "allow-undefined-check"
-    ],
+    "triple-equals": [true, "allow-undefined-check"],
     "ter-indent": [
       true,
       2,
@@ -46,6 +41,10 @@
     "jsx-alignment": true,
     "jsx-no-bind": true,
     "jsx-no-lambda": false,
-    "jsx-no-multiline-js": false
+    "jsx-no-multiline-js": false,
+    "interface-name": [true, "never-prefix"],
+    "object-literal-sort-keys": false,
+    "no-console": false,
+    "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore"]
   }
 }

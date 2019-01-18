@@ -7,18 +7,17 @@ import Login from './components/Login';
 import VideoCreate from './components/VideoCreate';
 import VideoList from './components/VideoList';
 
-interface Props {}
 interface State {
   user: any;
   selectedTab: string;
   login: boolean;
 }
-export default class App extends React.Component<Props, State> {
-  constructor(props: Props) {
+export default class App extends React.Component<any, State> {
+  constructor(props: any) {
     super(props);
     this.state = {
       user: null,
-      selectedTab: 'account',
+      selectedTab: 'edit',
       login: false,
     };
   }
@@ -92,8 +91,7 @@ export default class App extends React.Component<Props, State> {
             }}
             configureScene={(route: any) => Navigator.SceneConfigs.FloatFromRight}
             renderScene={(route: any, navigator: any) => {
-              const Component = route.component;
-              return <Component {...route.params} navigator={navigator} />;
+              return <route.component {...route.params} navigator={navigator} />;
             }}
           />
         </Icon.TabBarItem>

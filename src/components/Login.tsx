@@ -6,7 +6,7 @@ import config from '../common/config';
 import request from '../common/request';
 
 interface Props {
-  afterLogin: Function;
+  afterLogin: (user: any) => void;
 }
 
 interface State {
@@ -31,7 +31,7 @@ export default class Login extends React.Component<Props, State> {
       codeSent: true,
     });
   }
-  _sendVerifyCode = (shouldStartCountting: Function) => {
+  _sendVerifyCode = (shouldStartCountting: (code: boolean) => void) => {
     const phoneNumber = this.state.phoneNumber;
     if (!phoneNumber) {
       return AlertIOS.alert('手机号不能为空');
