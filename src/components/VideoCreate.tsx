@@ -1,7 +1,28 @@
 import * as React from 'react';
-import {Dimensions, Image, ImageStyle, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Dimensions, Image, ImageResizeMode, ImageStyle, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import ImagePicker from 'react-native-image-picker';
+import Video from 'react-native-video';
 
 const width = Dimensions.get('window').width;
+const height = Dimensions.get('window').height;
+
+type MediaType = 'photo' | 'video' | 'mixed' | undefined;
+type VideoQuality = 'low' | 'medium' | 'high' | undefined;
+
+const videoOptions = {
+  title: '选择视频',
+  cancelButtonTitle: '取消',
+  takePhotoButtonTitle: '录制 10 秒视频',
+  chooseFromLibraryButtonTitle: '选择已有视频',
+  videoQuality: 'medium' as VideoQuality,
+  mediaType: 'video' as MediaType,
+  durationLimit: 10,
+  noData: false,
+  storageOptions: {
+    skipBackup: true,
+    path: 'images',
+  },
+};
 
 interface Props {
   user?: any;
@@ -10,6 +31,17 @@ interface Props {
 
 interface State {
   previewVideo: any;
+  rate: number;
+  muted: boolean;
+  resizeMode: ImageResizeMode;
+  repeat: boolean;
+  videoReady: boolean;
+  videoProgress: number;
+  videoTotal: number;
+  currentTime: number;
+  playing: boolean;
+  paused: boolean;
+  videoRight: boolean;
 }
 
 export default class VideoCreate extends React.Component<Props, State> {
@@ -17,27 +49,29 @@ export default class VideoCreate extends React.Component<Props, State> {
     super(props);
     this.state = {
       previewVideo: null,
+      rate: 1,
+      muted: true,
+      resizeMode: 'contain',
+      repeat: false,
+      videoReady: false,
+      videoProgress: 0.01,
+      videoTotal: 0,
+      currentTime: 0,
+      playing: false,
+      paused: false,
+      videoRight: true,
     };
   }
   _pickVideo = () => {
-    const options = {
-      title: '选择头像',
-      cancelButtonTitle: '取消',
-      takePhotoButtonTitle: '拍照',
-      chooseFromLibraryButtonTitle: '选择相册',
-      quality: 0.75,
-      allowsEditing: true,
-      noData: false,
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-    };
     // console.log(ImagePicker);
-    // ImagePicker.showImagePicker(options, (response) => {
-    //   if (response.didCancel) {
-    //     return;
-    //   }
+    ImagePicker.showImagePicker(videoOptions, (response) => {
+      if (response.didCancel) {
+        return;
+      }
+      const uri = response.uri;
+      this.setState({
+        previewVideo: uri,
+      });
     //   const avatarData = `data:image/jpeg;base64,${response.data}`;
     //   const timestamp = Date.now();
     //   const tags = 'app,avatar';
@@ -69,7 +103,42 @@ export default class VideoCreate extends React.Component<Props, State> {
     //   .catch(error => {
     //     console.log(error);
     //   });
-    // });
+    });
+  }
+  _onLoadStart = () => {
+    console.log('start');
+  }
+  _onLoad = () => {
+    console.log('load');
+  }
+  _onProgress = (data: any) => {
+    const { currentTime, playableDuration } = data;
+    const percent = Number((currentTime / playableDuration).toFixed(2));
+    const newState: any = {
+      videoTotal: playableDuration,
+      currentTime: Number(currentTime.toFixed(2)),
+      videoProgress: percent,
+    };
+    if (!this.state.videoReady) {
+      newState.videoReady = true;
+    }
+    if (!this.state.playing) {
+      newState.playing = true;
+    }
+    this.setState(newState);
+  }
+  _onEnd = () => {
+    this.setState({
+      videoProgress: 1,
+      playing: false,
+    });
+  }
+  _onError = (error: any) => {
+    this.setState({
+      videoRight: false,
+    });
+    console.log(error);
+    console.log('error');
   }
   render() {
     return (
@@ -83,7 +152,25 @@ export default class VideoCreate extends React.Component<Props, State> {
         <View style={styles.page}>
         {
           this.state.previewVideo
-          ? <View />
+          ? <View style={styles.videoContainer}>
+              <View style={styles.videoBox}>
+              <Video
+                source={{uri: this.state.previewVideo}}
+                style={styles.video}
+                volume={5}
+                paused={this.state.paused}
+                rate={this.state.rate}
+                muted={this.state.muted}
+                resizeMode={this.state.resizeMode}
+                repeat={this.state.repeat}
+                onLoadStart={this._onLoadStart}
+                onLoad={this._onLoad}
+                onProgress={this._onProgress}
+                onEnd={this._onEnd}
+                onError={this._onError}
+              />
+              </View>
+            </View>
           : <TouchableOpacity style={styles.uploadContainer} onPress={this._pickVideo}>
             <View style={styles.uploadBox}>
               <Image source={require('../assets/images/record.png')} style={styles.uploadIcon as ImageStyle} />
@@ -157,5 +244,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 10,
     textAlign: 'center',
+  },
+  videoContainer: {
+    width,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  videoBox: {
+    width,
+    height: height * 0.6,
+    backgroundColor: '#333',
+  },
+  video: {
   },
 });

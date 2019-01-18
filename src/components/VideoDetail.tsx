@@ -4,6 +4,7 @@ import {
   AlertIOS,
   Dimensions,
   Image,
+  ImageResizeMode,
   ImageStyle,
   ListView,
   Modal,
@@ -26,11 +27,6 @@ const cache: Pet.PageData = {
   total: 0,
 };
 
-enum ResizeMode {
-  Cover = 'cover',
-  Contain = 'contain',
-}
-
 interface Props {
   data: any;
   navigator: any;
@@ -39,7 +35,7 @@ interface State {
   rate: number;
   muted: boolean;
   comments: any;
-  resizeMode: ResizeMode;
+  resizeMode: ImageResizeMode;
   repeat: boolean;
   videoReady: boolean;
   videoProgress: number;
@@ -66,7 +62,7 @@ export default class VideoDetail extends React.Component<Props, State> {
       rate: 1,
       muted: false,
       comments: dataSource.cloneWithRows([]),
-      resizeMode: ResizeMode.Contain,
+      resizeMode: 'contain',
       repeat: false,
       videoReady: false,
       videoProgress: 0.01,

@@ -23,6 +23,20 @@ import request from '../common/request';
 
 const width = Dimensions.get('window').width;
 
+const imageOptions = {
+  title: '选择头像',
+  cancelButtonTitle: '取消',
+  takePhotoButtonTitle: '拍照',
+  chooseFromLibraryButtonTitle: '选择相册',
+  quality: 0.75,
+  allowsEditing: true,
+  noData: false,
+  storageOptions: {
+    skipBackup: true,
+    path: 'images',
+  },
+};
+
 interface Props {
   user: any;
   logout: () => void;
@@ -71,21 +85,8 @@ export default class Account extends React.Component<Props, State> {
     });
   }
   _pickPhoto = () => {
-    const options = {
-      title: '选择头像',
-      cancelButtonTitle: '取消',
-      takePhotoButtonTitle: '拍照',
-      chooseFromLibraryButtonTitle: '选择相册',
-      quality: 0.75,
-      allowsEditing: true,
-      noData: false,
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-    };
     console.log(ImagePicker);
-    ImagePicker.showImagePicker(options, (response) => {
+    ImagePicker.showImagePicker(imageOptions, (response) => {
       if (response.didCancel) {
         return;
       }
