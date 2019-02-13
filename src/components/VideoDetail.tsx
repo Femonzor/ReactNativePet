@@ -52,7 +52,7 @@ interface State {
 }
 
 export default class VideoDetail extends React.Component<Props, State> {
-  videoPlayer: any;
+  public videoPlayer: any;
   constructor(props: Props) {
     super(props);
     const dataSource = new ListView.DataSource({
@@ -78,16 +78,16 @@ export default class VideoDetail extends React.Component<Props, State> {
       animationType: 'none',
     };
   }
-  _pop = () => {
+  public _pop = () => {
     this.props.navigator.pop();
   }
-  _onLoadStart = () => {
+  public _onLoadStart = () => {
     console.log('start');
   }
-  _onLoad = () => {
+  public _onLoad = () => {
     console.log('load');
   }
-  _onProgress = (data: any) => {
+  public _onProgress = (data: any) => {
     const { currentTime, playableDuration } = data;
     const percent = Number((currentTime / playableDuration).toFixed(2));
     const newState: any = {
@@ -103,37 +103,37 @@ export default class VideoDetail extends React.Component<Props, State> {
     }
     this.setState(newState);
   }
-  _onEnd = () => {
+  public _onEnd = () => {
     this.setState({
       videoProgress: 1,
       playing: false,
     });
   }
-  _onError = (error: any) => {
+  public _onError = (error: any) => {
     this.setState({
       videoRight: false,
     });
     console.log(error);
     console.log('error');
   }
-  _rePlay = () => {
+  public _rePlay = () => {
     this.videoPlayer.seek(0);
   }
-  _pause = () => {
+  public _pause = () => {
     if (!this.state.paused) {
       this.setState({
         paused: true,
       });
     }
   }
-  _resume = () => {
+  public _resume = () => {
     if (this.state.paused) {
       this.setState({
         paused: false,
       });
     }
   }
-  _fetchData = (page: number) => {
+  public _fetchData = (page: number) => {
     this.setState({
       loading: true,
     });
@@ -166,17 +166,17 @@ export default class VideoDetail extends React.Component<Props, State> {
       console.warn(error);
     });
   }
-  _fetchMoreData = () => {
+  public _fetchMoreData = () => {
     if (!this._hasMore() || this.state.loading) {
       return;
     }
     const page = cache.nextPage;
     this._fetchData(page);
   }
-  _hasMore = () => {
+  public _hasMore = () => {
     return cache.items.length !== cache.total;
   }
-  _renderFooter = () => {
+  public _renderFooter = () => {
     if (!this._hasMore() && cache.total !== 0) {
       return (
         <View style={styles.loadingMore}>
@@ -189,7 +189,7 @@ export default class VideoDetail extends React.Component<Props, State> {
     }
     return <ActivityIndicator style={styles.loadingMore} />;
   }
-  _renderHeader = () => {
+  public _renderHeader = () => {
     const data = this.props.data;
     return (
       <View style={styles.listHeader}>
@@ -216,7 +216,7 @@ export default class VideoDetail extends React.Component<Props, State> {
       </View>
     );
   }
-  _renderRow = (row: any) => {
+  public _renderRow = (row: any) => {
     return (
       <View key={row.id} style={styles.replyBox}>
         <Image style={styles.replyAvatar as ImageStyle} source={{uri: row.replyBy.avatar}} />
@@ -227,20 +227,20 @@ export default class VideoDetail extends React.Component<Props, State> {
       </View>
     );
   }
-  _setModalVisible = (isVisible: boolean) => {
+  public _setModalVisible = (isVisible: boolean) => {
     this.setState({
       modalVisible: isVisible,
     });
   }
-  _focus = () => {
+  public _focus = () => {
     this._setModalVisible(true);
   }
-  _blur = () => {
+  public _blur = () => {
   }
-  _closeModal = () => {
+  public _closeModal = () => {
     this._setModalVisible(false);
   }
-  _submit = () => {
+  public _submit = () => {
     if (!this.state.content) {
       return AlertIOS.alert('留言不能为空');
     }
@@ -288,10 +288,10 @@ export default class VideoDetail extends React.Component<Props, State> {
         });
     });
   }
-  componentDidMount() {
+  public componentDidMount() {
     this._fetchData(1);
   }
-  render() {
+  public render() {
     const data = this.props.data;
     // console.log(data);
     return (

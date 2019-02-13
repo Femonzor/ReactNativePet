@@ -8,7 +8,9 @@
   ],
   "rules": {
     "rules": {
-      "prettier": true
+      "prettier": [true, {
+        "printWidth": 120
+      }]
     },
     "ordered-imports": true,
     "quotemark": [

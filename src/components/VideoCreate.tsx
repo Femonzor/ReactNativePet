@@ -1,7 +1,9 @@
 import * as React from 'react';
-import {Dimensions, Image, ImageResizeMode, ImageStyle, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import ImagePicker from 'react-native-image-picker';
 import Video from 'react-native-video';
+import config from '../common/config';
+import request from '../common/request';
 
 const width = Dimensions.get('window').width;
 const height = Dimensions.get('window').height;
@@ -36,24 +38,41 @@ interface State {
   resizeMode: ImageResizeMode;
   repeat: boolean;
   videoReady: boolean;
+  video: any;
+  videoUploading: boolean;
+  videoUploaded: boolean;
   videoProgress: number;
   videoTotal: number;
   currentTime: number;
   playing: boolean;
   paused: boolean;
   videoRight: boolean;
+  user: any;
 }
+
+const cloudinary = {
+  api_key: '668661248534544',
+  audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
+  base: 'http://res.cloudinary.com/yang',
+  cloud_name: 'yang',
+  image: 'https://api.cloudinary.com/v1_1/yang/image/upload',
+  video: 'https://api.cloudinary.com/v1_1/yang/video/upload',
+};
 
 export default class VideoCreate extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
+      user: this.props.user || {},
       previewVideo: null,
       rate: 1,
       muted: true,
       resizeMode: 'contain',
       repeat: false,
       videoReady: false,
+      video: null,
+      videoUploading: false,
+      videoUploaded: false,
       videoProgress: 0.01,
       videoTotal: 0,
       currentTime: 0,
@@ -72,38 +91,85 @@ export default class VideoCreate extends React.Component<Props, State> {
       this.setState({
         previewVideo: uri,
       });
-    //   const avatarData = `data:image/jpeg;base64,${response.data}`;
-    //   const timestamp = Date.now();
-    //   const tags = 'app,avatar';
-    //   const folder = 'avatar';
-    //   const accessToken = this.state.user.accessToken;
-    //   const signatureUrl = `${config.api.base}${config.api.signature}`;
-    //   request.post(signatureUrl, {
-    //     accessToken,
-    //     timestamp,
-    //     type: 'avatar',
-    //     folder,
-    //     tags,
-    //   })
-    //   .then(data => {
-    //     console.log(data);
-    //     if (data && data.code === 0) {
-    //       const signature = data.data;
-    //       const body = new FormData();
-    //       body.append('folder', folder);
-    //       body.append('signature', signature);
-    //       body.append('tags', tags);
-    //       body.append('timestamp', `${timestamp}`);
-    //       body.append('api_key', cloudinary.api_key);
-    //       body.append('resource_type', 'image');
-    //       body.append('file', avatarData);
-    //       this._uploadImage(body);
-    //     }
-    //   })
-    //   .catch(error => {
-    //     console.log(error);
-    //   });
+      const avatarData = `data:image/jpeg;base64,${response.data}`;
+      const timestamp = Date.now();
+      const tags = 'app,avatar';
+      const folder = 'avatar';
+      const accessToken = this.state.user.accessToken;
+      const signatureUrl = `${config.api.base}${config.api.signature}`;
+      request.post(signatureUrl, {
+        accessToken,
+        timestamp,
+        type: 'avatar',
+        folder,
+        tags,
+      })
+      .then(data => {
+        console.log(data);
+        if (data && data.code === 0) {
+          const signature = data.data;
+          const body = new FormData();
+          body.append('folder', folder);
+          body.append('signature', signature);
+          body.append('tags', tags);
+          body.append('timestamp', `${timestamp}`);
+          body.append('api_key', cloudinary.api_key);
+          body.append('resource_type', 'image');
+          body.append('file', avatarData);
+          this._uploadVideo(body);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
     });
+  }
+  _uploadVideo(body: FormData) {
+    const xhr = new XMLHttpRequest();
+    const url = cloudinary.image;
+    console.log(body);
+    this.setState({
+      videoUploading: true,
+      videoUploaded: false,
+    });
+    xhr.open('POST', url);
+    xhr.onload = () => {
+      if (xhr.status !== 200) {
+        AlertIOS.alert('请求失败');
+        console.log(xhr.responseText);
+        return;
+      }
+      if (!xhr.responseText) {
+        AlertIOS.alert('请求失败');
+        return;
+      }
+      let response;
+      try {
+        response = JSON.parse(xhr.response);
+      } catch (e) {
+        console.log(e);
+        console.log('parse fails');
+      }
+      if (response && response.public_id) {
+        this.setState({
+          video: response,
+          videoUploading: false,
+          videoUploaded: true,
+        });
+        // this._asyncUser(true);
+      }
+    };
+    if (xhr.upload) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Number((event.loaded / event.total).toFixed(2));
+          this.setState({
+            videoProgress: percent,
+          });
+        }
+      };
+    }
+    xhr.send(body);
   }
   _onLoadStart = () => {
     console.log('start');
@@ -140,6 +206,17 @@ export default class VideoCreate extends React.Component<Props, State> {
     console.log(error);
     console.log('error');
   }
+  componentDidMount() {
+    AsyncStorage.getItem('user')
+     .then((data: any) => {
+       const user = data ? JSON.parse(data) : null;
+       if (user && user.accessToken) {
+         this.setState({
+           user,
+         });
+       }
+     });
+  }
   render() {
     return (
       <View style={styles.container}>
@@ -169,6 +246,17 @@ export default class VideoCreate extends React.Component<Props, State> {
                 onEnd={this._onEnd}
                 onError={this._onError}
               />
+              {
+                !this.state.videoUploaded && this.state.videoUploading
+                ? <View style={styles.progressTipBox}>
+                  <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}>
+                    <Text style={styles.progressTip}>
+                      正在生成静音视频，已完成{(this.state.videoProgress * 100).toFixed(2)}%
+                    </Text>
+                  </ProgressViewIOS>
+                </View>
+                : null
+              }
               </View>
             </View>
           : <TouchableOpacity style={styles.uploadContainer} onPress={this._pickVideo}>
@@ -256,5 +344,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
   },
   video: {
+    width,
+    height: height * 0.6,
+    backgroundColor: '#333',
+  },
+  progressTipBox: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width,
+    height: 30,
+    backgroundColor: 'rgba(244, 244, 244, 0.65)',
+  },
+  progressTip: {
+    color: '#333',
+    width: width - 10,
+    padding: 5,
+  },
+  progressBar: {
+    width,
   },
 });
