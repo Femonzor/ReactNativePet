@@ -93,7 +93,7 @@ export default class Account extends React.Component<Props, State> {
       const avatarData = `data:image/jpeg;base64,${response.data}`;
       const timestamp = Date.now();
       const tags = 'app,avatar';
-      const folder = 'avatar';
+      const folder = 'react-native-pet/avatar';
       const accessToken = this.state.user.accessToken;
       const signatureUrl = `${config.api.base}${config.api.signature}`;
       request.post(signatureUrl, {

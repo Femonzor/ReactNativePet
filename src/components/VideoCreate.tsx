@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import RNFS from 'react-native-fs';
 import ImagePicker from 'react-native-image-picker';
 import Video from 'react-native-video';
 import config from '../common/config';
@@ -50,7 +51,7 @@ interface State {
   user: any;
 }
 
-const cloudinary = {
+const cloudinaryConfig = {
   api_key: '668661248534544',
   audio: 'https://api.cloudinary.com/v1_1/yang/raw/upload',
   base: 'http://res.cloudinary.com/yang',
@@ -83,7 +84,7 @@ export default class VideoCreate extends React.Component<Props, State> {
   }
   _pickVideo = () => {
     // console.log(ImagePicker);
-    ImagePicker.showImagePicker(videoOptions, (response) => {
+    ImagePicker.showImagePicker(videoOptions, async (response) => {
       if (response.didCancel) {
         return;
       }
@@ -91,16 +92,16 @@ export default class VideoCreate extends React.Component<Props, State> {
       this.setState({
         previewVideo: uri,
       });
-      const avatarData = `data:image/jpeg;base64,${response.data}`;
+      const video = await RNFS.readFile(uri, 'base64');
       const timestamp = Date.now();
-      const tags = 'app,avatar';
-      const folder = 'avatar';
+      const tags = 'app,video';
+      const folder = 'react-native-pet/video';
       const accessToken = this.state.user.accessToken;
       const signatureUrl = `${config.api.base}${config.api.signature}`;
       request.post(signatureUrl, {
         accessToken,
         timestamp,
-        type: 'avatar',
+        type: 'video',
         folder,
         tags,
       })
@@ -113,9 +114,9 @@ export default class VideoCreate extends React.Component<Props, State> {
           body.append('signature', signature);
           body.append('tags', tags);
           body.append('timestamp', `${timestamp}`);
-          body.append('api_key', cloudinary.api_key);
-          body.append('resource_type', 'image');
-          body.append('file', avatarData);
+          body.append('api_key', cloudinaryConfig.api_key);
+          body.append('resource_type', 'video');
+          body.append('file', `data:video/mp4;base64,${video}`);
           this._uploadVideo(body);
         }
       })
@@ -126,7 +127,7 @@ export default class VideoCreate extends React.Component<Props, State> {
   }
   _uploadVideo(body: FormData) {
     const xhr = new XMLHttpRequest();
-    const url = cloudinary.image;
+    const url = cloudinaryConfig.video;
     console.log(body);
     this.setState({
       videoUploading: true,
