@@ -43,6 +43,7 @@ interface State {
   videoUploading: boolean;
   videoUploaded: boolean;
   videoProgress: number;
+  videoUploadedProgress: number;
   videoTotal: number;
   currentTime: number;
   playing: boolean;
@@ -75,6 +76,7 @@ export default class VideoCreate extends React.Component<Props, State> {
       videoUploading: false,
       videoUploaded: false,
       videoProgress: 0.01,
+      videoUploadedProgress: 0.01,
       videoTotal: 0,
       currentTime: 0,
       playing: false,
@@ -83,7 +85,6 @@ export default class VideoCreate extends React.Component<Props, State> {
     };
   }
   _pickVideo = () => {
-    // console.log(ImagePicker);
     ImagePicker.showImagePicker(videoOptions, async (response) => {
       if (response.didCancel) {
         return;
@@ -130,6 +131,7 @@ export default class VideoCreate extends React.Component<Props, State> {
     const url = cloudinaryConfig.video;
     console.log(body);
     this.setState({
+      videoUploadedProgress: 0,
       videoUploading: true,
       videoUploaded: false,
     });
@@ -157,7 +159,6 @@ export default class VideoCreate extends React.Component<Props, State> {
           videoUploading: false,
           videoUploaded: true,
         });
-        // this._asyncUser(true);
       }
     };
     if (xhr.upload) {
@@ -165,7 +166,7 @@ export default class VideoCreate extends React.Component<Props, State> {
         if (event.lengthComputable) {
           const percent = Number((event.loaded / event.total).toFixed(2));
           this.setState({
-            videoProgress: percent,
+            videoUploadedProgress: percent,
           });
         }
       };
@@ -250,9 +251,9 @@ export default class VideoCreate extends React.Component<Props, State> {
               {
                 !this.state.videoUploaded && this.state.videoUploading
                 ? <View style={styles.progressTipBox}>
-                  <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}>
+                  <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress}>
                     <Text style={styles.progressTip}>
-                      正在生成静音视频，已完成{(this.state.videoProgress * 100).toFixed(2)}%
+                      正在生成静音视频，已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}%
                     </Text>
                   </ProgressViewIOS>
                 </View>
@@ -357,12 +358,13 @@ const styles = StyleSheet.create({
     height: 30,
     backgroundColor: 'rgba(244, 244, 244, 0.65)',
   },
+  progressBar: {
+    width,
+  },
   progressTip: {
     color: '#333',
     width: width - 10,
     padding: 5,
-  },
-  progressBar: {
-    width,
+    height: 30,
   },
 });
