@@ -38,12 +38,14 @@ interface State {
   muted: boolean;
   resizeMode: ImageResizeMode;
   repeat: boolean;
-  videoReady: boolean;
+  // video upload
   video: any;
   videoUploading: boolean;
   videoUploaded: boolean;
   videoProgress: number;
   videoUploadedProgress: number;
+  // video load
+  videoReady: boolean;
   videoTotal: number;
   currentTime: number;
   playing: boolean;
@@ -71,12 +73,12 @@ export default class VideoCreate extends React.Component<Props, State> {
       muted: true,
       resizeMode: 'contain',
       repeat: false,
-      videoReady: false,
       video: null,
       videoUploading: false,
       videoUploaded: false,
       videoProgress: 0.01,
       videoUploadedProgress: 0.01,
+      videoReady: false,
       videoTotal: 0,
       currentTime: 0,
       playing: false,
@@ -159,6 +161,21 @@ export default class VideoCreate extends React.Component<Props, State> {
           videoUploading: false,
           videoUploaded: true,
         });
+        const videoUrl = `${config.api.base}${config.api.video}`;
+        const accessToken = this.state.user.accessToken;
+        request.post(videoUrl, {
+          accessToken,
+          video: JSON.stringify(response),
+        })
+        .catch(error => {
+          console.log(error);
+          AlertIOS.alert('视频同步异常，请重新上传！');
+        })
+        .then(data => {
+          if (!data || data.code !== 0) {
+            AlertIOS.alert('视频同步出错，请重新上传');
+          }
+        });
       }
     };
     if (xhr.upload) {
@@ -226,7 +243,11 @@ export default class VideoCreate extends React.Component<Props, State> {
           <Text style={styles.toolbarTitle}>
           {this.state.previewVideo ? '点击按钮配音' : '开始配音'}
           </Text>
-          <Text style={styles.toolbarEdit} onPress={this._pickVideo}>更换视频</Text>
+          {
+            this.state.previewVideo && this.state.videoUploaded
+            ? <Text style={styles.toolbarEdit} onPress={this._pickVideo}>更换视频</Text>
+            : null
+          }
         </View>
         <View style={styles.page}>
         {

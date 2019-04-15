@@ -16,5 +16,6 @@ export default {
     verify: '/api/user/verify',
     update: '/api/user/update',
     signature: '/api/signature',
+    video: '/api/videos',
   },
 };
