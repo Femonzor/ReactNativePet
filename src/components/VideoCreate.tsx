@@ -2,6 +2,8 @@ import * as React from 'react';
 import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import RNFS from 'react-native-fs';
 import ImagePicker from 'react-native-image-picker';
+import CountDownButton from 'react-native-smscode-count-down';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import Video from 'react-native-video';
 import config from '../common/config';
 import request from '../common/request';
@@ -52,6 +54,9 @@ interface State {
   paused: boolean;
   videoRight: boolean;
   user: any;
+  // count down
+  counting: boolean;
+  recording: boolean;
 }
 
 const cloudinaryConfig = {
@@ -84,6 +89,8 @@ export default class VideoCreate extends React.Component<Props, State> {
       playing: false,
       paused: false,
       videoRight: true,
+      counting: false,
+      recording: false,
     };
   }
   _pickVideo = () => {
@@ -98,7 +105,7 @@ export default class VideoCreate extends React.Component<Props, State> {
       const video = await RNFS.readFile(uri, 'base64');
       const timestamp = Date.now();
       const tags = 'app,video';
-      const folder = 'react-native-pet/video';
+      const folder = 'react-native-pet/mute-video';
       const accessToken = this.state.user.accessToken;
       const signatureUrl = `${config.api.base}${config.api.signature}`;
       request.post(signatureUrl, {
@@ -225,6 +232,19 @@ export default class VideoCreate extends React.Component<Props, State> {
     console.log(error);
     console.log('error');
   }
+  _record = () => {
+    this.setState({
+      recording: true,
+    });
+  }
+  _counting = () => {
+    this.setState({
+      counting: true,
+    });
+  }
+  _startCount = (shouldStartCountting: (shouldStart: boolean) => void) => {
+    shouldStartCountting(true);
+  }
   componentDidMount() {
     AsyncStorage.getItem('user')
      .then((data: any) => {
@@ -289,6 +309,31 @@ export default class VideoCreate extends React.Component<Props, State> {
               <Text style={styles.uploadDesc}>建议时长不超过 20 秒</Text>
             </View>
           </TouchableOpacity>
+        }
+        {
+          this.state.videoUploaded
+          ? <View style={styles.recordBox}>
+              <View style={styles.recordIconBox}>
+              {
+                this.state.counting && !this.state.recording
+                ? <CountDownButton
+                    textStyle={{fontSize: 32, fontWeight: '600'}}
+                    timerCount={3}
+                    timerTitle={'3'}
+                    timerActiveTitle={['', '']}
+                    timerEnd={this._record}
+                    enable={true}
+                    executeFunc={(shouldStartingCounting: (shouldStart: boolean) => void)=>{
+                      shouldStartingCounting(true);
+                    }}
+                />
+                : <TouchableOpacity onPress={this._counting}>
+                  <Icon name='microphone' style={styles.recordIcon} />
+                </TouchableOpacity>
+              }
+              </View>
+            </View>
+          : null
         }
         </View>
       </View>
@@ -387,5 +432,25 @@ const styles = StyleSheet.create({
     width: width - 10,
     padding: 5,
     height: 30,
+  },
+  recordBox: {
+    width,
+    height: 60,
+    alignItems: 'center',
+  },
+  recordIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#ee735c',
+    borderWidth: 1,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordIcon: {
+    fontSize: 58,
+    backgroundColor: 'transparent',
+    color: '#fff',
   },
 });
