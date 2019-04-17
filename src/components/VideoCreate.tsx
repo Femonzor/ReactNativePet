@@ -47,11 +47,8 @@ interface State {
   videoProgress: number;
   videoUploadedProgress: number;
   // video load
-  videoReady: boolean;
   videoTotal: number;
   currentTime: number;
-  playing: boolean;
-  paused: boolean;
   videoRight: boolean;
   user: any;
   // count down
@@ -69,6 +66,7 @@ const cloudinaryConfig = {
 };
 
 export default class VideoCreate extends React.Component<Props, State> {
+  public videoPlayer: any;
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -83,11 +81,8 @@ export default class VideoCreate extends React.Component<Props, State> {
       videoUploaded: false,
       videoProgress: 0.01,
       videoUploadedProgress: 0.01,
-      videoReady: false,
       videoTotal: 0,
       currentTime: 0,
-      playing: false,
-      paused: false,
       videoRight: true,
       counting: false,
       recording: false,
@@ -206,24 +201,19 @@ export default class VideoCreate extends React.Component<Props, State> {
   _onProgress = (data: any) => {
     const { currentTime, playableDuration } = data;
     const percent = Number((currentTime / playableDuration).toFixed(2));
-    const newState: any = {
+    this.setState({
       videoTotal: playableDuration,
       currentTime: Number(currentTime.toFixed(2)),
       videoProgress: percent,
-    };
-    if (!this.state.videoReady) {
-      newState.videoReady = true;
-    }
-    if (!this.state.playing) {
-      newState.playing = true;
-    }
-    this.setState(newState);
+    });
   }
   _onEnd = () => {
-    this.setState({
-      videoProgress: 1,
-      playing: false,
-    });
+    if (this.state.recording) {
+      this.setState({
+        videoProgress: 1,
+        recording: false,
+      });
+    }
   }
   _onError = (error: any) => {
     this.setState({
@@ -234,13 +224,19 @@ export default class VideoCreate extends React.Component<Props, State> {
   }
   _record = () => {
     this.setState({
+      videoProgress: 0,
+      counting: false,
       recording: true,
     });
+    this.videoPlayer.seek(0);
   }
   _counting = () => {
-    this.setState({
-      counting: true,
-    });
+    if (!this.state.counting && !this.state.recording) {
+      this.setState({
+        counting: true,
+      });
+      this.videoPlayer.seek(this.state.videoTotal - 0.01);
+    }
   }
   _startCount = (shouldStartCountting: (shouldStart: boolean) => void) => {
     shouldStartCountting(true);
@@ -275,10 +271,10 @@ export default class VideoCreate extends React.Component<Props, State> {
           ? <View style={styles.videoContainer}>
               <View style={styles.videoBox}>
               <Video
+                ref={ref => { this.videoPlayer = ref; }}
                 source={{uri: this.state.previewVideo}}
                 style={styles.video}
                 volume={5}
-                paused={this.state.paused}
                 rate={this.state.rate}
                 muted={this.state.muted}
                 resizeMode={this.state.resizeMode}
@@ -292,12 +288,23 @@ export default class VideoCreate extends React.Component<Props, State> {
               {
                 !this.state.videoUploaded && this.state.videoUploading
                 ? <View style={styles.progressTipBox}>
-                  <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress}>
-                    <Text style={styles.progressTip}>
-                      正在生成静音视频，已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}%
-                    </Text>
-                  </ProgressViewIOS>
-                </View>
+                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress}>
+                      <Text style={styles.progressTip}>
+                        正在生成静音视频，已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}%
+                      </Text>
+                    </ProgressViewIOS>
+                  </View>
+                : null
+              }
+              {
+                this.state.recording
+                ? <View style={styles.progressTipBox}>
+                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}>
+                      <Text style={styles.progressTip}>
+                        录制声音中
+                      </Text>
+                    </ProgressViewIOS>
+                  </View>
                 : null
               }
               </View>
@@ -313,10 +320,11 @@ export default class VideoCreate extends React.Component<Props, State> {
         {
           this.state.videoUploaded
           ? <View style={styles.recordBox}>
-              <View style={styles.recordIconBox}>
+              <View style={[styles.recordIconBox, this.state.recording && styles.recordOn]}>
               {
                 this.state.counting && !this.state.recording
                 ? <CountDownButton
+                    disableColor='#fff'
                     textStyle={{fontSize: 32, fontWeight: '600'}}
                     timerCount={3}
                     timerTitle={'3'}
@@ -441,6 +449,7 @@ const styles = StyleSheet.create({
   recordIconBox: {
     width: 68,
     height: 68,
+    marginTop: -30,
     borderRadius: 34,
     backgroundColor: '#ee735c',
     borderWidth: 1,
@@ -452,5 +461,8 @@ const styles = StyleSheet.create({
     fontSize: 58,
     backgroundColor: 'transparent',
     color: '#fff',
+  },
+  recordOn: {
+    backgroundColor: '#ccc',
   },
 });
