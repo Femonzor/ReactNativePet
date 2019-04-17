@@ -1,8 +1,10 @@
 import * as React from 'react';
-import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, Platform, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {AudioRecorder, AudioUtils} from 'react-native-audio';
 import RNFS from 'react-native-fs';
 import ImagePicker from 'react-native-image-picker';
 import CountDownButton from 'react-native-smscode-count-down';
+import Sound from 'react-native-sound';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Video from 'react-native-video';
 import config from '../common/config';
@@ -54,6 +56,10 @@ interface State {
   // count down
   counting: boolean;
   recording: boolean;
+  // audio
+  audioPath: string;
+  audioPlaying: boolean;
+  recordDone: boolean;
 }
 
 const cloudinaryConfig = {
@@ -86,6 +92,9 @@ export default class VideoCreate extends React.Component<Props, State> {
       videoRight: true,
       counting: false,
       recording: false,
+      audioPath: AudioUtils.DocumentDirectoryPath + '/pet.aac',
+      audioPlaying: false,
+      recordDone: false,
     };
   }
   _pickVideo = () => {
@@ -207,10 +216,12 @@ export default class VideoCreate extends React.Component<Props, State> {
       videoProgress: percent,
     });
   }
-  _onEnd = () => {
+  _onEnd = async () => {
     if (this.state.recording) {
+      await AudioRecorder.stopRecording();
       this.setState({
         videoProgress: 1,
+        recordDone: true,
         recording: false,
       });
     }
@@ -222,12 +233,14 @@ export default class VideoCreate extends React.Component<Props, State> {
     console.log(error);
     console.log('error');
   }
-  _record = () => {
+  _record = async () => {
     this.setState({
       videoProgress: 0,
       counting: false,
+      recordDone: false,
       recording: true,
     });
+    await AudioRecorder.startRecording();
     this.videoPlayer.seek(0);
   }
   _counting = () => {
@@ -241,6 +254,66 @@ export default class VideoCreate extends React.Component<Props, State> {
   _startCount = (shouldStartCountting: (shouldStart: boolean) => void) => {
     shouldStartCountting(true);
   }
+  _preview = async () => {
+    if (this.state.audioPlaying) {
+      await AudioRecorder.stopPlaying();
+    }
+    this.setState({
+      videoProgress: 0,
+      audioPlaying: true,
+    });
+    setTimeout(() => {
+      const sound = new Sound(this.state.audioPath, '', (error: any) => {
+        if (error) {
+          console.log('failed to load the sound', error);
+        }
+      });
+
+      setTimeout(() => {
+        this.videoPlayer.seek(0);
+        sound.play((success: any) => {
+          if (success) {
+            console.log('successfully finished playing');
+          } else {
+            console.log('playback failed due to audio decoding errors');
+          }
+        });
+      }, 100);
+    }, 100);
+  }
+  _finishRecording = (didSucceed: boolean, filePath: string, fileSize: number) => {
+    // this.setState({ finished: didSucceed });
+    console.log(`Finished recording of duration ${this.state.currentTime} seconds at path: ${filePath} and size of ${fileSize || 0} bytes`);
+  }
+  _initAudio = () => {
+    // const audioPath = AudioUtils.DocumentDirectoryPath + `/${this.state.audioName}`;
+    const audioPath = this.state.audioPath;
+    console.log(`audioPath: ${audioPath}`);
+    AudioRecorder.requestAuthorization().then((isAuthorised: any) => {
+      // this.setState({ hasPermission: isAuthorised });
+
+      if (!isAuthorised) { return; }
+
+      AudioRecorder.prepareRecordingAtPath(audioPath, {
+        SampleRate: 22050,
+        Channels: 1,
+        AudioQuality: 'High',
+        AudioEncoding: 'aac',
+        AudioEncodingBitRate: 32000,
+      });
+
+      AudioRecorder.onProgress = (data: any) => {
+        // this.setState({currentTime: Math.floor(data.currentTime)});
+      };
+
+      AudioRecorder.onFinished = (data: any) => {
+        // Android callback comes in the form of a promise instead.
+        if (Platform.OS === 'ios') {
+          this._finishRecording(data.status === 'OK', data.audioFileURL, data.audioFileSize);
+        }
+      };
+    });
+  }
   componentDidMount() {
     AsyncStorage.getItem('user')
      .then((data: any) => {
@@ -251,6 +324,7 @@ export default class VideoCreate extends React.Component<Props, State> {
          });
        }
      });
+    this._initAudio();
   }
   render() {
     return (
@@ -288,22 +362,34 @@ export default class VideoCreate extends React.Component<Props, State> {
               {
                 !this.state.videoUploaded && this.state.videoUploading
                 ? <View style={styles.progressTipBox}>
-                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress}>
-                      <Text style={styles.progressTip}>
-                        正在生成静音视频，已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}%
-                      </Text>
-                    </ProgressViewIOS>
+                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoUploadedProgress} />
+                    <Text style={styles.progressTip}>
+                      正在生成静音视频，已完成{(this.state.videoUploadedProgress * 100).toFixed(2)}%
+                    </Text>
                   </View>
                 : null
               }
               {
-                this.state.recording
+                this.state.recording || this.state.audioPlaying
                 ? <View style={styles.progressTipBox}>
-                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress}>
-                      <Text style={styles.progressTip}>
-                        录制声音中
-                      </Text>
-                    </ProgressViewIOS>
+                    <ProgressViewIOS style={styles.progressBar} progressTintColor='#ee735c' progress={this.state.videoProgress} />
+                    {
+                      this.state.recording
+                      ? <Text style={styles.progressTip}>
+                          录制声音中
+                        </Text>
+                      : null
+                    }
+                  </View>
+                : null
+              }
+              {
+                this.state.recordDone
+                ? <View style={styles.previewBox}>
+                    <Icon name='play' style={styles.previewIcon} />
+                    <Text style={styles.previewText} onPress={this._preview}>
+                      预览
+                    </Text>
                   </View>
                 : null
               }
@@ -336,8 +422,8 @@ export default class VideoCreate extends React.Component<Props, State> {
                     }}
                 />
                 : <TouchableOpacity onPress={this._counting}>
-                  <Icon name='microphone' style={styles.recordIcon} />
-                </TouchableOpacity>
+                    <Icon name='microphone' style={styles.recordIcon} />
+                  </TouchableOpacity>
               }
               </View>
             </View>
@@ -464,5 +550,27 @@ const styles = StyleSheet.create({
   },
   recordOn: {
     backgroundColor: '#ccc',
+  },
+  previewBox: {
+    width: 80,
+    height: 30,
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    borderWidth: 1,
+    borderColor: '#ee735c',
+    borderRadius: 3,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  previewIcon: {
+    marginRight: 5,
+    fontSize: 20,
+    color: '#ee735c',
+  },
+  previewText: {
+    fontSize: 20,
+    color: '#ee735c',
   },
 });
