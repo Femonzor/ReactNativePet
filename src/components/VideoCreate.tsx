@@ -71,30 +71,34 @@ const cloudinaryConfig = {
   video: 'https://api.cloudinary.com/v1_1/yang/video/upload',
 };
 
+const defaultState = {
+  previewVideo: null,
+  rate: 1,
+  muted: true,
+  resizeMode: 'contain' as ImageResizeMode,
+  repeat: false,
+  video: null,
+  videoUploading: false,
+  videoUploaded: false,
+  videoProgress: 0.01,
+  videoUploadedProgress: 0.01,
+  videoTotal: 0,
+  currentTime: 0,
+  videoRight: true,
+  counting: false,
+  recording: false,
+  audioPath: AudioUtils.DocumentDirectoryPath + '/pet.aac',
+  audioPlaying: false,
+  recordDone: false,
+};
+
 export default class VideoCreate extends React.Component<Props, State> {
   public videoPlayer: any;
   constructor(props: Props) {
     super(props);
     this.state = {
       user: this.props.user || {},
-      previewVideo: null,
-      rate: 1,
-      muted: true,
-      resizeMode: 'contain',
-      repeat: false,
-      video: null,
-      videoUploading: false,
-      videoUploaded: false,
-      videoProgress: 0.01,
-      videoUploadedProgress: 0.01,
-      videoTotal: 0,
-      currentTime: 0,
-      videoRight: true,
-      counting: false,
-      recording: false,
-      audioPath: AudioUtils.DocumentDirectoryPath + '/pet.aac',
-      audioPlaying: false,
-      recordDone: false,
+      ...defaultState,
     };
   }
   _pickVideo = () => {
@@ -102,11 +106,15 @@ export default class VideoCreate extends React.Component<Props, State> {
       if (response.didCancel) {
         return;
       }
-      const uri = response.uri;
-      this.setState({
-        previewVideo: uri,
-      });
-      const video = await RNFS.readFile(uri, 'base64');
+      const newState = {
+        ...defaultState,
+        user: this.state.user,
+        ...{
+          previewVideo: response.uri,
+        },
+      };
+      this.setState(newState);
+      const video = await RNFS.readFile(response.uri, 'base64');
       const timestamp = Date.now();
       const tags = 'app,video';
       const folder = 'react-native-pet/mute-video';
@@ -244,7 +252,7 @@ export default class VideoCreate extends React.Component<Props, State> {
     this.videoPlayer.seek(0);
   }
   _counting = () => {
-    if (!this.state.counting && !this.state.recording) {
+    if (!this.state.counting && !this.state.recording && !this.state.audioPlaying) {
       this.setState({
         counting: true,
       });
@@ -406,7 +414,7 @@ export default class VideoCreate extends React.Component<Props, State> {
         {
           this.state.videoUploaded
           ? <View style={styles.recordBox}>
-              <View style={[styles.recordIconBox, this.state.recording && styles.recordOn]}>
+              <View style={[styles.recordIconBox, (this.state.recording || this.state.audioPlaying) && styles.recordOn]}>
               {
                 this.state.counting && !this.state.recording
                 ? <CountDownButton
