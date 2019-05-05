@@ -9,7 +9,6 @@ export default {
   api: {
     // base: 'http://rap2api.taobao.org/app/mock/83318',
     base: 'http://localhost:3001',
-    videos: '/api/videos',
     favo: '/api/favo',
     comments: '/api/comments',
     signup: '/api/user/signup',
@@ -17,5 +16,5 @@ export default {
     update: '/api/user/update',
     signature: '/api/signature',
     video: '/api/videos',
-  },
+  } as any,
 };

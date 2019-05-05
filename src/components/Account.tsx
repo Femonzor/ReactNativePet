@@ -106,7 +106,7 @@ export default class Account extends React.Component<Props, State> {
       .then(data => {
         console.log(data);
         if (data && data.code === 0) {
-          const signature = data.data;
+          const signature = data.data.token;
           const body = new FormData();
           body.append('folder', folder);
           body.append('signature', signature);

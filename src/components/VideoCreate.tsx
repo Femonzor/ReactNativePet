@@ -3,6 +3,7 @@ import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, 
 import {AudioRecorder, AudioUtils} from 'react-native-audio';
 import RNFS from 'react-native-fs';
 import ImagePicker from 'react-native-image-picker';
+import * as Progress from 'react-native-progress';
 import CountDownButton from 'react-native-smscode-count-down';
 import Sound from 'react-native-sound';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -57,9 +58,13 @@ interface State {
   counting: boolean;
   recording: boolean;
   // audio
+  audio: any;
   audioPath: string;
   audioPlaying: boolean;
   recordDone: boolean;
+  audioUploaded: boolean;
+  audioUploading: boolean;
+  audioUploadedProgress: number;
 }
 
 const cloudinaryConfig = {
@@ -87,9 +92,13 @@ const defaultState = {
   videoRight: true,
   counting: false,
   recording: false,
+  audio: null,
   audioPath: AudioUtils.DocumentDirectoryPath + '/pet.aac',
   audioPlaying: false,
   recordDone: false,
+  audioUploaded: false,
+  audioUploading: false,
+  audioUploadedProgress: 0,
 };
 
 export default class VideoCreate extends React.Component<Props, State> {
@@ -130,7 +139,7 @@ export default class VideoCreate extends React.Component<Props, State> {
       .then(data => {
         console.log(data);
         if (data && data.code === 0) {
-          const signature = data.data;
+          const signature = data.data.token;
           const body = new FormData();
           body.append('folder', folder);
           body.append('signature', signature);
@@ -139,7 +148,7 @@ export default class VideoCreate extends React.Component<Props, State> {
           body.append('api_key', cloudinaryConfig.api_key);
           body.append('resource_type', 'video');
           body.append('file', `data:video/mp4;base64,${video}`);
-          this._uploadVideo(body);
+          this._upload(body, 'video');
         }
       })
       .catch(error => {
@@ -147,15 +156,15 @@ export default class VideoCreate extends React.Component<Props, State> {
       });
     });
   }
-  _uploadVideo(body: FormData) {
+  _upload(body: FormData, type: string) {
     const xhr = new XMLHttpRequest();
     const url = cloudinaryConfig.video;
     console.log(body);
-    this.setState({
-      videoUploadedProgress: 0,
-      videoUploading: true,
-      videoUploaded: false,
-    });
+    const initState: any = {};
+    initState[`${type}UploadedProgress`] = 0;
+    initState[`${type}Uploading`] = true;
+    initState[`${type}Uploaded`] = false;
+    this.setState(initState);
     xhr.open('POST', url);
     xhr.onload = () => {
       if (xhr.status !== 200) {
@@ -175,35 +184,38 @@ export default class VideoCreate extends React.Component<Props, State> {
         console.log('parse fails');
       }
       if (response && response.public_id) {
-        this.setState({
-          video: response,
-          videoUploading: false,
-          videoUploaded: true,
-        });
-        const videoUrl = `${config.api.base}${config.api.video}`;
-        const accessToken = this.state.user.accessToken;
-        request.post(videoUrl, {
-          accessToken,
-          video: JSON.stringify(response),
-        })
-        .catch(error => {
-          console.log(error);
-          AlertIOS.alert('视频同步异常，请重新上传！');
-        })
-        .then(data => {
-          if (!data || data.code !== 0) {
-            AlertIOS.alert('视频同步出错，请重新上传');
-          }
-        });
+        const newState: any = {};
+        newState[type] = response;
+        newState[`${type}Uploading`] = false;
+        newState[`${type}Uploaded`] = true;
+        this.setState(newState);
+        if (type === 'video') {
+          const mediaUrl = `${config.api.base}${config.api[type]}`;
+          const accessToken = this.state.user.accessToken;
+          const postBody: any = {
+            accessToken,
+          };
+          postBody[type] = JSON.stringify(response);
+          request.post(mediaUrl, postBody)
+          .catch(error => {
+            console.log(error);
+            AlertIOS.alert('视频同步异常，请重新上传！');
+          })
+          .then(data => {
+            if (!data || data.code !== 0) {
+              AlertIOS.alert('视频同步出错，请重新上传');
+            }
+          });
+        }
       }
     };
     if (xhr.upload) {
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
           const percent = Number((event.loaded / event.total).toFixed(2));
-          this.setState({
-            videoUploadedProgress: percent,
-          });
+          const progressState: any = {};
+          progressState[`${type}UploadedProgress`] = percent;
+          this.setState(progressState);
         }
       };
     }
@@ -293,8 +305,40 @@ export default class VideoCreate extends React.Component<Props, State> {
     // this.setState({ finished: didSucceed });
     console.log(`Finished recording of duration ${this.state.currentTime} seconds at path: ${filePath} and size of ${fileSize || 0} bytes`);
   }
+  _uploadAudio = async () => {
+    const audio = await RNFS.readFile(this.state.audioPath, 'base64');
+    const timestamp = Date.now();
+    const tags = 'app,audio';
+    const folder = 'react-native-pet/audio';
+    const accessToken = this.state.user.accessToken;
+    const signatureUrl = `${config.api.base}${config.api.signature}`;
+    request.post(signatureUrl, {
+      accessToken,
+      timestamp,
+      type: 'audio',
+      folder,
+      tags,
+    })
+    .then(data => {
+      console.log(data);
+      if (data && data.code === 0) {
+        const signature = data.data.token;
+        const body = new FormData();
+        body.append('folder', folder);
+        body.append('signature', signature);
+        body.append('tags', tags);
+        body.append('timestamp', `${timestamp}`);
+        body.append('api_key', cloudinaryConfig.api_key);
+        body.append('resource_type', 'video');
+        body.append('file', `data:video/mp4;base64,${audio}`);
+        this._upload(body, 'audio');
+      }
+    })
+    .catch(error => {
+      console.log(error);
+    });
+  }
   _initAudio = () => {
-    // const audioPath = AudioUtils.DocumentDirectoryPath + `/${this.state.audioName}`;
     const audioPath = this.state.audioPath;
     console.log(`audioPath: ${audioPath}`);
     AudioRecorder.requestAuthorization().then((isAuthorised: any) => {
@@ -435,6 +479,27 @@ export default class VideoCreate extends React.Component<Props, State> {
               }
               </View>
             </View>
+          : null
+        }
+        {
+          this.state.videoUploaded && this.state.recordDone
+          ? <View style={styles.uploadAudioBox}>
+            {
+              !this.state.audioUploaded && !this.state.audioUploading
+              ? <Text style={styles.uploadAudioText} onPress={this._uploadAudio}>下一步</Text>
+              : null
+            }
+            {
+              this.state.audioUploading
+              ? <Progress.Circle
+                showsText={true}
+                size={60}
+                color={'#ee735c'}
+                progress={this.state.audioUploadedProgress}
+              />
+              : null
+            }
+          </View>
           : null
         }
         </View>
@@ -579,6 +644,23 @@ const styles = StyleSheet.create({
   },
   previewText: {
     fontSize: 20,
+    color: '#ee735c',
+  },
+  uploadAudioBox: {
+    width,
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadAudioText: {
+    width: width - 20,
+    padding: 5,
+    borderWidth: 1,
+    borderColor: '#ee735c',
+    borderRadius: 5,
+    textAlign: 'center',
+    fontSize: 30,
     color: '#ee735c',
   },
 });
