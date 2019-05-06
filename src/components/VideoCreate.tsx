@@ -44,6 +44,7 @@ interface State {
   resizeMode: ImageResizeMode;
   repeat: boolean;
   // video upload
+  videoId: string | null;
   video: any;
   videoUploading: boolean;
   videoUploaded: boolean;
@@ -58,6 +59,7 @@ interface State {
   counting: boolean;
   recording: boolean;
   // audio
+  audioId: string | null;
   audio: any;
   audioPath: string;
   audioPlaying: boolean;
@@ -82,6 +84,7 @@ const defaultState = {
   muted: true,
   resizeMode: 'contain' as ImageResizeMode,
   repeat: false,
+  videoId: null,
   video: null,
   videoUploading: false,
   videoUploaded: false,
@@ -92,6 +95,7 @@ const defaultState = {
   videoRight: true,
   counting: false,
   recording: false,
+  audioId: null,
   audio: null,
   audioPath: AudioUtils.DocumentDirectoryPath + '/pet.aac',
   audioPlaying: false,
@@ -189,24 +193,37 @@ export default class VideoCreate extends React.Component<Props, State> {
         newState[`${type}Uploading`] = false;
         newState[`${type}Uploaded`] = true;
         this.setState(newState);
-        if (type === 'video') {
-          const mediaUrl = `${config.api.base}${config.api[type]}`;
-          const accessToken = this.state.user.accessToken;
-          const postBody: any = {
-            accessToken,
-          };
-          postBody[type] = JSON.stringify(response);
-          request.post(mediaUrl, postBody)
+        const mediaUrl = `${config.api.base}${config.api[type]}`;
+        const accessToken = this.state.user.accessToken;
+        const postBody: any = {
+          accessToken,
+        };
+        postBody[type] = JSON.stringify(response);
+        if (type === 'audio') {
+          postBody.videoId = this.state.videoId;
+        }
+        request.post(mediaUrl, postBody)
           .catch(error => {
             console.log(error);
-            AlertIOS.alert('视频同步异常，请重新上传！');
+            if (type === 'video') {
+              AlertIOS.alert('视频同步异常，请重新上传！');
+            } else if (type === 'audio') {
+              AlertIOS.alert('音频同步异常，请重新上传！');
+            }
           })
           .then(data => {
-            if (!data || data.code !== 0) {
-              AlertIOS.alert('视频同步出错，请重新上传');
+            if (data && data.code === 0) {
+              const mediaState: any = {};
+              mediaState[`${type}Id`] = data.data;
+              this.setState(mediaState);
+            } else {
+              if (type === 'video') {
+                AlertIOS.alert('视频同步出错，请重新上传！');
+              } else if (type === 'audio') {
+                AlertIOS.alert('音频同步出错，请重新上传！');
+              }
             }
           });
-        }
       }
     };
     if (xhr.upload) {

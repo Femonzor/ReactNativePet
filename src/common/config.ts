@@ -16,5 +16,6 @@ export default {
     update: '/api/user/update',
     signature: '/api/signature',
     video: '/api/videos',
+    audio: '/api/audios',
   } as any,
 };
