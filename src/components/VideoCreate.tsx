@@ -1,12 +1,14 @@
 import * as React from 'react';
-import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, Platform, ProgressViewIOS, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {AlertIOS, AsyncStorage, Dimensions, Image, ImageResizeMode, ImageStyle, Modal, Platform, ProgressViewIOS, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {AudioRecorder, AudioUtils} from 'react-native-audio';
+import Button from 'react-native-button';
 import RNFS from 'react-native-fs';
 import ImagePicker from 'react-native-image-picker';
 import * as Progress from 'react-native-progress';
 import CountDownButton from 'react-native-smscode-count-down';
 import Sound from 'react-native-sound';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Video from 'react-native-video';
 import config from '../common/config';
 import request from '../common/request';
@@ -67,6 +69,10 @@ interface State {
   audioUploaded: boolean;
   audioUploading: boolean;
   audioUploadedProgress: number;
+
+  title: string;
+  modalVisible: boolean;
+  publishProgress: number;
 }
 
 const cloudinaryConfig = {
@@ -103,6 +109,9 @@ const defaultState = {
   audioUploaded: false,
   audioUploading: false,
   audioUploadedProgress: 0,
+  title: '',
+  modalVisible: true,
+  publishProgress: 0.2,
 };
 
 export default class VideoCreate extends React.Component<Props, State> {
@@ -383,6 +392,12 @@ export default class VideoCreate extends React.Component<Props, State> {
       };
     });
   }
+  _closeModal = () => {
+
+  }
+  _submit = () => {
+
+  }
   componentDidMount() {
     AsyncStorage.getItem('user')
      .then((data: any) => {
@@ -520,6 +535,46 @@ export default class VideoCreate extends React.Component<Props, State> {
           : null
         }
         </View>
+        <Modal
+          animationType={'fade'}
+          visible={this.state.modalVisible}
+        >
+          <View style={styles.modalContainer}>
+            <Ionicons
+              name='ios-close'
+              style={styles.closeIcon}
+              onPress={this._closeModal}
+            />
+            <View style={styles.fieldBox}>
+              <TextInput
+                placeholder='给宠物一句介绍'
+                style={styles.inputField}
+                autoCapitalize={'none'}
+                autoCorrect={false}
+                defaultValue={this.state.title}
+                onChangeText={(text: string) => {
+                  this.setState({
+                    title: text,
+                  });
+                }}
+              />
+            </View>
+            <View style={styles.loadingBox}>
+              <Text style={styles.loadingText}>正在生成专属视频中...</Text>
+              <Text style={styles.loadingText}>正在合并视频音频...</Text>
+              <Text style={styles.loadingText}>开始上传！</Text>
+              <Progress.Circle
+                showsText={true}
+                size={60}
+                color={'#ee735c'}
+                progress={this.state.publishProgress}
+              />
+            </View>
+            <View style={styles.submitBox}>
+              <Button style={styles.btn} onPress={this._submit}>发布视频</Button>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   }
@@ -679,5 +734,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 30,
     color: '#ee735c',
+  },
+  modalContainer: {
+    width,
+    height,
+    paddingTop: 50,
+    backgroundColor: '#fff',
+  },
+  inputField: {
+    height: 36,
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 14,
+  },
+  btn: {
+    marginTop: 65,
+    padding: 10,
+    marginLeft: 10,
+    marginRight: 10,
+    backgroundColor: 'transparent',
+    borderColor: '#ee735c',
+    borderWidth: 1,
+    borderRadius: 4,
+    color: '#ee735c',
+  },
+  closeIcon: {
+    position: 'absolute',
+    fontSize: 32,
+    right: 20,
+    top: 30,
+    color: '#ee735c',
+  },
+  loadingBox: {
+    width,
+    height: 50,
+    marginTop: 10,
+    padding: 15,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#333',
+  },
+  fieldBox: {
+    width: width - 40,
+    height: 36,
+    marginTop: 30,
+    marginRight: 20,
+    marginLeft: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+  },
+  submitBox: {
+    marginTop: 50,
+    padding: 15,
   },
 });
