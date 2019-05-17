@@ -17,5 +17,6 @@ export default {
     signature: '/api/signature',
     video: '/api/videos',
     audio: '/api/audios',
+    media: '/api/medias',
   } as any,
 };

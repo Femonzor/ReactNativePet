@@ -73,6 +73,8 @@ interface State {
   title: string;
   modalVisible: boolean;
   publishProgress: number;
+  publishing: boolean;
+  willPublish: boolean;
 }
 
 const cloudinaryConfig = {
@@ -110,8 +112,10 @@ const defaultState = {
   audioUploading: false,
   audioUploadedProgress: 0,
   title: '',
-  modalVisible: true,
+  modalVisible: false,
   publishProgress: 0.2,
+  publishing: false,
+  willPublish: false,
 };
 
 export default class VideoCreate extends React.Component<Props, State> {
@@ -224,6 +228,10 @@ export default class VideoCreate extends React.Component<Props, State> {
             if (data && data.code === 0) {
               const mediaState: any = {};
               mediaState[`${type}Id`] = data.data;
+              if (type === 'audio') {
+                this._showModal();
+                mediaState.willPublish = true;
+              }
               this.setState(mediaState);
             } else {
               if (type === 'video') {
@@ -393,10 +401,50 @@ export default class VideoCreate extends React.Component<Props, State> {
     });
   }
   _closeModal = () => {
-
+    this.setState({
+      modalVisible: false,
+    });
+  }
+  _showModal = () => {
+    this.setState({
+      modalVisible: true,
+    });
   }
   _submit = () => {
-
+    const body: any = {
+      title: this.state.title,
+      videoId: this.state.videoId,
+      audioId: this.state.audioId,
+    };
+    const creationUrl = `${config.api.base}${config.api.media}`;
+    const user = this.state.user;
+    if (user && user.accessToken) {
+      body.accessToken = user.accessToken;
+      this.setState({
+        publishing: true,
+      });
+      request.post(creationUrl, body)
+      .then((res) => {
+        if (res && res.code === 0) {
+          AlertIOS.alert('视频发布成功', undefined, () => {
+            this._closeModal();
+            const state = {
+              ...defaultState,
+            };
+            this.setState(state);
+          });
+        } else {
+          this.setState({
+            publishing: false,
+          });
+          AlertIOS.alert('视频发布失败');
+        }
+      })
+      .catch((error: any) => {
+        console.log(error);
+        AlertIOS.alert('视频发布异常');
+      });
+    }
   }
   componentDidMount() {
     AsyncStorage.getItem('user')
@@ -545,33 +593,53 @@ export default class VideoCreate extends React.Component<Props, State> {
               style={styles.closeIcon}
               onPress={this._closeModal}
             />
-            <View style={styles.fieldBox}>
-              <TextInput
-                placeholder='给宠物一句介绍'
-                style={styles.inputField}
-                autoCapitalize={'none'}
-                autoCorrect={false}
-                defaultValue={this.state.title}
-                onChangeText={(text: string) => {
-                  this.setState({
-                    title: text,
-                  });
-                }}
-              />
-            </View>
-            <View style={styles.loadingBox}>
-              <Text style={styles.loadingText}>正在生成专属视频中...</Text>
-              <Text style={styles.loadingText}>正在合并视频音频...</Text>
-              <Text style={styles.loadingText}>开始上传！</Text>
-              <Progress.Circle
-                showsText={true}
-                size={60}
-                color={'#ee735c'}
-                progress={this.state.publishProgress}
-              />
-            </View>
+            {
+              this.state.audioUploaded && !this.state.publishing
+              ? <View style={styles.fieldBox}>
+                  <TextInput
+                    placeholder='给宠物一句介绍'
+                    style={styles.inputField}
+                    autoCapitalize={'none'}
+                    autoCorrect={false}
+                    defaultValue={this.state.title}
+                    onChangeText={(text: string) => {
+                      this.setState({
+                        title: text,
+                      });
+                    }}
+                  />
+                </View>
+              : null
+            }
+            {
+              this.state.publishing
+              ? <View style={styles.loadingBox}>
+                  <Text style={styles.loadingText}>正在生成专属视频中...</Text>
+                  {
+                    this.state.willPublish
+                    ? <Text style={styles.loadingText}>正在合并视频音频...</Text>
+                    : null
+                  }
+                  {
+                    this.state.publishProgress > 0.3
+                    ? <Text style={styles.loadingText}>开始上传！</Text>
+                    : null
+                  }
+                  <Progress.Circle
+                    showsText={true}
+                    size={60}
+                    color={'#ee735c'}
+                    progress={this.state.publishProgress}
+                  />
+                </View>
+              : null
+            }
             <View style={styles.submitBox}>
-              <Button style={styles.btn} onPress={this._submit}>发布视频</Button>
+              {
+                this.state.audioUploaded && !this.state.publishing
+                ? <Button style={styles.btn} onPress={this._submit}>发布视频</Button>
+                : null
+              }
             </View>
           </View>
         </Modal>
